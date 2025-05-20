@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { DrugArrivalService } from './drug-arrival.service';
 import { CreateDrugArrivalDto } from './dto/create-drug-arrival.dto';
@@ -36,6 +37,21 @@ export class DrugArrivalController {
       new Date(start),
       new Date(end),
     );
+  }
+
+  @Get('report/range')
+  getArrivalsReportByRange(
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
+    }
+
+    return this.drugArrivalService.arrivalsReportByPeriod(startDate, endDate);
   }
 
   @Get(':id')

@@ -154,4 +154,78 @@ export class DrugArrivalService {
       order: { expiryDate: 'ASC' },
     });
   }
+
+  async arrivalsReportByPeriod(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{
+    totalQuantity: number;
+    totalAmount: number;
+    averagePurchasePrice: number;
+    batchCount: number;
+    arrivals: DrugArrival[];
+    suppliers: {
+      name: string;
+      totalAmount: number;
+      totalQuantity: number;
+    }[];
+    stockByDrug: {
+      drugName: string;
+      quantity: number;
+    }[];
+  }> {
+    const arrivals = await this.drugArrivalRepository.find({
+      where: {
+        arrivalDate: Between(startDate, endDate),
+      },
+      relations: ['drug'],
+    });
+
+    let totalQuantity = 0;
+    let totalAmount = 0;
+    const suppliersMap = new Map<
+      string,
+      { totalAmount: number; totalQuantity: number }
+    >();
+
+    for (const arrival of arrivals) {
+      totalQuantity += arrival.quantity;
+      totalAmount += Number(arrival.purchaseAmount);
+
+      if (!suppliersMap.has(arrival.supplier)) {
+        suppliersMap.set(arrival.supplier, {
+          totalAmount: 0,
+          totalQuantity: 0,
+        });
+      }
+
+      const supplierData = suppliersMap.get(arrival.supplier)!;
+      supplierData.totalAmount += Number(arrival.purchaseAmount);
+      supplierData.totalQuantity += arrival.quantity;
+    }
+
+    const batchCount = arrivals.length;
+    const averagePurchasePrice =
+      totalQuantity > 0 ? Number((totalAmount / totalQuantity).toFixed(2)) : 0;
+
+    // Остатки на складе по каждому препарату
+    const allDrugs = await this.drugRepository.find();
+    const stockByDrug = allDrugs.map((drug) => ({
+      drugName: drug.name,
+      quantity: drug.quantity,
+    }));
+
+    return {
+      totalQuantity,
+      totalAmount,
+      averagePurchasePrice,
+      batchCount,
+      arrivals,
+      suppliers: Array.from(suppliersMap.entries()).map(([name, data]) => ({
+        name,
+        ...data,
+      })),
+      stockByDrug,
+    };
+  }
 }
