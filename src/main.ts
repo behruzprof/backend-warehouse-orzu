@@ -1,14 +1,22 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
+import { AppModule } from 'app.module';
+import { ValidationPipe, Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  const PORT = process.env.PORT as string
+
+  const PORT = process.env.PORT as string;
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   await app.listen(PORT, () => {
-    Logger.log(`SERVER STARTED ON 5000`)
+    Logger.log(`SERVER STARTED ON 5000`);
   });
 }
 bootstrap();
