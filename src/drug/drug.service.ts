@@ -4,6 +4,7 @@ import { Like, Repository } from 'typeorm';
 import { Drug } from './entities/drug.entity';
 import { CreateDrugDto } from './dto/create-drug.dto';
 import { UpdateDrugDto } from './dto/update-drug.dto';
+import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
 
 @Injectable()
 export class DrugService {
@@ -11,12 +12,33 @@ export class DrugService {
   constructor(
     @InjectRepository(Drug)
     private readonly drugRepository: Repository<Drug>,
+    @InjectRepository(DrugArrival)
+    private readonly drugArrivalRepository: Repository<DrugArrival>,
   ) {}
 
   // ✅ Создание нового лекарства
   async create(createDrugDto: CreateDrugDto): Promise<Drug> {
-    const drug = this.drugRepository.create(createDrugDto);
-    return await this.drugRepository.save(drug);
+    const {
+      ...drugData // остальные поля для Drug
+    } = createDrugDto;
+
+    // Шаг 1: создаем лекарство
+    const drug = this.drugRepository.create({...drugData, orderQuantity: drugData.quantity});
+    const savedDrug = await this.drugRepository.save(drug);
+
+    // Шаг 2: создаем запись о приходе
+    const drugArrival = this.drugArrivalRepository.create({
+      drug,
+      arrivalDate: drug.arrivalDate,
+      expiryDate: drug.expiryDate,
+      quantity: drug.quantity,
+      purchaseAmount: drug.purchaseAmount,
+      supplier: drug.supplier
+    });
+
+    await this.drugArrivalRepository.save(drugArrival);
+
+    return savedDrug;
   }
 
   // ✅ Получить все лекарства
@@ -52,6 +74,14 @@ export class DrugService {
         name: Like(`%${query}%`), // Для PostgreSQL. Для MySQL может быть просто Like
       },
       take: 10, // Ограничиваем количество подсказок
+    });
+  }
+
+  async searchByNameAndGetAll(query: string): Promise<Drug[]> {
+    return this.drugRepository.find({
+      where: {
+        name: Like(`%${query}%`), // Для PostgreSQL. Для MySQL может быть просто Like
+      },
     });
   }
 }

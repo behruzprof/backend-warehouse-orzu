@@ -54,6 +54,11 @@ export class DrugController {
     return this.drugService.searchByName(query.trim());
   }
 
+  @Get('search/all')
+  async searchAll(@Query('query') query: string) {
+    return this.drugService.searchByNameAndGetAll(query.trim());
+  }
+
   /**
    * Обновить информацию о лекарстве
    * PATCH /drug/:id

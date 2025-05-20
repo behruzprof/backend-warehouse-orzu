@@ -14,10 +14,6 @@ export class CreateDrugDto {
   @IsString()
   unit: string; // Единица измерения (например, "таблетка")
 
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  unitPrice: number; // Цена за единицу
-
   @IsOptional()
   @IsString()
   description?: string; // Описание
@@ -39,10 +35,6 @@ export class CreateDrugDto {
   @IsInt()
   @Min(0)
   quantity: number;
-
-  @IsInt()
-  @Min(0)
-  orderQuantity: number;
 
   @IsString()
   supplier: string;

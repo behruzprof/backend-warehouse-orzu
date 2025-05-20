@@ -13,9 +13,6 @@ export class Drug {
   @Column()
   unit: string; // Единица измерения (например, "таблетка")
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  unitPrice: number; // Цена за единицу
-
   @Column({ nullable: true })
   description: string; // Описание (например, назначение)
 
