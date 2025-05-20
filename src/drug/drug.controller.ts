@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { DrugService } from './drug.service';
 import { CreateDrugDto } from './dto/create-drug.dto';
@@ -43,6 +44,14 @@ export class DrugController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.drugService.findOne(id);
+  }
+
+  @Get('search')
+  async search(@Query('query') query: string) {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+    return this.drugService.searchByName(query.trim());
   }
 
   /**

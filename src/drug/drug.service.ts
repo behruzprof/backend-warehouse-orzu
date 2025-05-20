@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { Drug } from './entities/drug.entity';
 import { CreateDrugDto } from './dto/create-drug.dto';
 import { UpdateDrugDto } from './dto/update-drug.dto';
@@ -44,5 +44,14 @@ export class DrugService {
   async remove(id: number): Promise<void> {
     const drug = await this.findOne(id); // Проверка на существование
     await this.drugRepository.remove(drug); // Удаление
+  }
+
+  async searchByName(query: string): Promise<Drug[]> {
+    return this.drugRepository.find({
+      where: {
+        name: Like(`%${query}%`), // Для PostgreSQL. Для MySQL может быть просто Like
+      },
+      take: 10, // Ограничиваем количество подсказок
+    });
   }
 }
