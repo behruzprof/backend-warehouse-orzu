@@ -1,10 +1,6 @@
 import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-} from 'typeorm';
+import { DrugRequest } from 'drug-request/entities/drug-request.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
 @Entity('drugs')
 export class Drug {
@@ -55,4 +51,7 @@ export class Drug {
 
   @OneToMany(() => DrugArrival, (arrival) => arrival.drug, { cascade: true })
   arrivals: DrugArrival[];
+
+  @OneToMany(() => DrugRequest, (drugRequest) => drugRequest.drug)
+  drugRequests: DrugRequest[];
 }
