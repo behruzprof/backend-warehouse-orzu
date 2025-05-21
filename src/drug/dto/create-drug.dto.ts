@@ -36,6 +36,10 @@ export class CreateDrugDto {
   @Min(0)
   quantity: number;
 
+  @IsInt()
+  @Min(0)
+  orderQuantity: number;
+
   @IsString()
   supplier: string;
 

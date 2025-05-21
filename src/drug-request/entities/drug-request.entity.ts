@@ -8,7 +8,7 @@ export class DrugRequest {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Department, (department) => department.drugRequests, { eager: true })
+  @ManyToOne(() => Department, (department) => department.drugRequests)
   department: Department;
 
   @ManyToOne(() => Drug, (drug) => drug.drugRequests, { eager: true })

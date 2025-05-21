@@ -7,9 +7,8 @@ export class Department {
   id: number;
 
   @Column()
-  name: string; // Название отделения, например: "Хирургия", "Терапия"
+  name: string;
 
-  // Если нужно связать с заявками на лекарства (опционально)
-  @OneToMany(() => DrugRequest, (drugRequest) => drugRequest.drug)
+  @OneToMany(() => DrugRequest, (drugRequest) => drugRequest.department)
   drugRequests: DrugRequest[];
 }

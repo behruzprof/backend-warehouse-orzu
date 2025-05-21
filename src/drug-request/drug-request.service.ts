@@ -27,26 +27,31 @@ export class DrugRequestService {
     private departmentRepo: Repository<Department>,
   ) {}
 
-  async create(
-    createDrugRequestDto: CreateDrugRequestDto,
-  ): Promise<DrugRequest> {
-    const { departmentId, drugId, quantity, status, patientName } =
-      createDrugRequestDto;
+  async create(createDto: CreateDrugRequestDto): Promise<DrugRequest> {
+    const {
+      departmentId,
+      drugId,
+      quantity,
+      status = DrugRequestStatus.ISSUED,
+      patientName,
+    } = createDto;
 
     const department = await this.departmentRepo.findOneBy({
       id: departmentId,
     });
-    if (!department) throw new NotFoundException('Department not found');
+    if (!department) throw new NotFoundException('Bo‘lim topilmadi');
 
     const drug = await this.drugRepo.findOneBy({ id: drugId });
-    if (!drug) throw new NotFoundException('Drug not found');
+    if (!drug) throw new NotFoundException('Dori topilmadi');
 
-    // Проверяем, что хватает лекарства для выдачи
+    // Omborda dori miqdori yetarliligini tekshirish
     if (status === DrugRequestStatus.ISSUED && drug.quantity < quantity) {
-      throw new BadRequestException('Not enough drug quantity available');
+      throw new BadRequestException(
+        `Omborda yetarli miqdorda ${drug.name} mavjud emas`,
+      );
     }
 
-    // Обновляем количество лекарства
+    // Ombordagi dorilar miqdorini yangilash
     if (status === DrugRequestStatus.ISSUED) {
       drug.quantity -= quantity;
     } else if (status === DrugRequestStatus.RETURNED) {
@@ -58,9 +63,9 @@ export class DrugRequestService {
     const drugRequest = this.drugRequestRepo.create({
       department,
       drug,
-      patientName,
       quantity,
       status,
+      patientName,
     });
 
     return this.drugRequestRepo.save(drugRequest);
@@ -152,15 +157,16 @@ export class DrugRequestService {
 
   // Отчёты — например, сколько выдано по отделениям
   async getReportByDepartment() {
-    const query = this.drugRequestRepo
+    return this.drugRequestRepo
       .createQueryBuilder('request')
-      .select('request.departmentId', 'departmentId')
+      .select('DATE(request.createdAt)', 'date')
+      .addSelect('request.departmentId', 'departmentId')
       .addSelect('SUM(request.quantity)', 'totalQuantity')
-      .addSelect('request.status', 'status')
-      .groupBy('request.departmentId')
-      .addGroupBy('request.status');
-
-    return query.getRawMany();
+      .where('request.status = :status', { status: 'issued' })
+      .groupBy('DATE(request.createdAt)')
+      .addGroupBy('request.departmentId')
+      .orderBy('date', 'ASC')
+      .getRawMany();
   }
 
   async getReportByDrug() {

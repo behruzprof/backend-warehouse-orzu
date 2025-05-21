@@ -23,7 +23,7 @@ export class DrugService {
     } = createDrugDto;
 
     // Шаг 1: создаем лекарство
-    const drug = this.drugRepository.create({...drugData, orderQuantity: drugData.quantity});
+    const drug = this.drugRepository.create({...drugData});
     const savedDrug = await this.drugRepository.save(drug);
 
     // Шаг 2: создаем запись о приходе

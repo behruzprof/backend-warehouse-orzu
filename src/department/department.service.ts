@@ -18,18 +18,26 @@ export class DepartmentService {
   }
 
   async findAll(): Promise<Department[]> {
-    return this.departmentRepository.find();
+    return this.departmentRepository.find({
+      relations: ['drugRequests'],
+    });
   }
 
   async findOne(id: number): Promise<Department> {
-    const department = await this.departmentRepository.findOneBy({ id });
+    const department = await this.departmentRepository.findOne({
+      where: { id },
+      relations: ['drugRequests'],
+    });
     if (!department) {
       throw new NotFoundException(`Department #${id} not found`);
     }
     return department;
   }
 
-  async update(id: number, updateDto: UpdateDepartmentDto): Promise<Department> {
+  async update(
+    id: number,
+    updateDto: UpdateDepartmentDto,
+  ): Promise<Department> {
     const department = await this.findOne(id);
     const updated = Object.assign(department, updateDto);
     return this.departmentRepository.save(updated);
