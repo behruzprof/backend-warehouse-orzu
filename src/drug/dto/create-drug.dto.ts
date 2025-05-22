@@ -53,7 +53,6 @@ export class CreateDrugDto {
   @IsDateString()
   expiryDate: string;
 
-  @IsOptional()
   @IsString()
-  category?: string; // <- Добавили поле
+  category: string; 
 }
