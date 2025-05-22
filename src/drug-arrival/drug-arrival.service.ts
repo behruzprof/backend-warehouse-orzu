@@ -42,6 +42,9 @@ export class DrugArrivalService {
 
     // Обновляем общее количество в лекарстве
     drug.quantity += createDto.quantity;
+    drug.purchaseAmount = createDto.purchaseAmount; 
+    // Обновляем цену закупки
+    drug.expiryDate = new Date(createDto.expiryDate); // Обновляем срок годности
     await this.drugRepository.save(drug);
 
     return savedArrival;
