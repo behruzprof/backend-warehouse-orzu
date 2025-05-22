@@ -46,6 +46,9 @@ export class Drug {
   @Column({ type: 'date', nullable: true })
   expiryDate: Date; // Срок годности
 
+  @Column({ nullable: true })
+  category: string; // Категория лекарства (например, "антибиотик")
+
   @OneToMany(() => DrugArrival, (arrival) => arrival.drug, { cascade: true })
   arrivals: DrugArrival[];
 

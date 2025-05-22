@@ -36,6 +36,11 @@ export class DrugController {
     return this.drugService.findAll();
   }
 
+  @Get('by-category')
+  findByCategory(@Query('category') category: string) {
+    return this.drugService.findByExactCategory(category);
+  }
+
   /**
    * Получить одно лекарство по ID
    * GET /drug/:id

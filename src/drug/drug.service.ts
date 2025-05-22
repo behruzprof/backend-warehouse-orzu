@@ -23,7 +23,7 @@ export class DrugService {
     } = createDrugDto;
 
     // Шаг 1: создаем лекарство
-    const drug = this.drugRepository.create({...drugData});
+    const drug = this.drugRepository.create({ ...drugData });
     const savedDrug = await this.drugRepository.save(drug);
 
     // Шаг 2: создаем запись о приходе
@@ -33,7 +33,7 @@ export class DrugService {
       expiryDate: drug.expiryDate,
       quantity: drug.quantity,
       purchaseAmount: drug.purchaseAmount,
-      supplier: drug.supplier
+      supplier: drug.supplier,
     });
 
     await this.drugArrivalRepository.save(drugArrival);
@@ -53,6 +53,12 @@ export class DrugService {
       throw new NotFoundException(`Лекарство с ID ${id} не найдено`);
     }
     return drug;
+  }
+
+  async findByExactCategory(category: string): Promise<Drug[]> {
+    return this.drugRepository.find({
+      where: { category },
+    });
   }
 
   // ✅ Обновление информации о лекарстве
