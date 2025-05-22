@@ -22,11 +22,11 @@ import { Department } from 'department/entities/department.entity';
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'mysql',
-        host: process.env.HOST,
-        port: Number(process.env.DB_PORT),
-        username: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
+        host: "mysql.railway.internal",
+        port: 3306,
+        username: "root",
+        password: "MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft",
+        database: "railway",
         entities: [Drug, DrugArrival, DrugRequest, Department],
         synchronize: true
       })
