@@ -17,19 +17,19 @@ import { Department } from 'department/entities/department.entity';
     ConfigModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads'
+      serveRoot: '/uploads',
     }),
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'mysql',
-        host: "mysql.railway.internal",
+        host: 'mysql.railway.internal',
         port: 3306,
-        username: "root",
-        password: "MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft",
-        database: "railway",
+        username: 'root',
+        password: 'MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft',
+        database: 'railway',
         entities: [Drug, DrugArrival, DrugRequest, Department],
-        synchronize: true
-      })
+        synchronize: true,
+      }),
     }),
     DrugModule,
     DrugArrivalModule,

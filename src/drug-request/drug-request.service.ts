@@ -159,11 +159,11 @@ export class DrugRequestService {
   async getReportByDepartment() {
     return this.drugRequestRepo
       .createQueryBuilder('request')
-      .select('DATE(request.createdAt)', 'date')
+      .select(`DATE(CONVERT_TZ(request.createdAt, '+00:00', '+05:00'))`, 'date')
       .addSelect('request.departmentId', 'departmentId')
       .addSelect('SUM(request.quantity)', 'totalQuantity')
-      .where('request.status = :status', { status: 'issued' })
-      .groupBy('DATE(request.createdAt)')
+      .where('request.status = :status', { status: DrugRequestStatus.ISSUED })
+      .groupBy(`DATE(CONVERT_TZ(request.createdAt, '+00:00', '+05:00'))`)
       .addGroupBy('request.departmentId')
       .orderBy('date', 'ASC')
       .getRawMany();
