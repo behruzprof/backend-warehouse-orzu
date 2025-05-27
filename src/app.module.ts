@@ -40,3 +40,17 @@ import { Department } from 'department/entities/department.entity';
   providers: [],
 })
 export class AppModule {}
+
+/* 
+
+ useFactory: () => ({
+        type: 'mysql',
+        host: 'mysql.railway.internal',
+        port: 3306,
+        username: 'root',
+        password: 'MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft',
+        database: 'railway',
+        entities: [Drug, DrugArrival, DrugRequest, Department],
+        synchronize: true,
+      }),
+*/

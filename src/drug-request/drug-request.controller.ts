@@ -49,9 +49,9 @@ export class DrugRequestController {
     return this.drugRequestService.getReportByDepartment();
   }
 
-  @Get('report/by-drug')
-  getReportByDrug() {
-    return this.drugRequestService.getReportByDrug();
+  @Get('report/by-drug/:drugId')
+  getReportByDrug(@Param('drugId', ParseIntPipe) drugId: number) {
+    return this.drugRequestService.getReportByDrug(drugId);
   }
 
   @Get('report/by-patient')

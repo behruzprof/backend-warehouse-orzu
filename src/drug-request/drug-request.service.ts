@@ -143,7 +143,6 @@ export class DrugRequestService {
     });
     if (!drugRequest) throw new NotFoundException('Drug request not found');
 
-    // При удалении заявки возвращаем количество лекарства обратно, если было выдано
     if (drugRequest.status === DrugRequestStatus.ISSUED) {
       drugRequest.drug.quantity += drugRequest.quantity;
       await this.drugRepo.save(drugRequest.drug);
@@ -155,7 +154,6 @@ export class DrugRequestService {
     await this.drugRequestRepo.delete(id);
   }
 
-  // Отчёты — например, сколько выдано по отделениям
   async getReportByDepartment() {
     return this.drugRequestRepo
       .createQueryBuilder('request')
@@ -169,16 +167,21 @@ export class DrugRequestService {
       .getRawMany();
   }
 
-  async getReportByDrug() {
-    const query = this.drugRequestRepo
+  async getReportByDrug(drugId: number) {
+    const rawData = await this.drugRequestRepo
       .createQueryBuilder('request')
-      .select('request.drugId', 'drugId')
-      .addSelect('SUM(request.quantity)', 'totalQuantity')
-      .addSelect('request.status', 'status')
-      .groupBy('request.drugId')
-      .addGroupBy('request.status');
+      .select('d.name', 'department') // Название отделения
+      .addSelect("DATE_FORMAT(request.createdAt, '%Y-%m')", 'month') // месяц
+      .addSelect('SUM(request.quantity)', 'totalQuantity') // сумма
+      .innerJoin('request.department', 'd')
+      .where('request.drugId = :drugId', { drugId })
+      .andWhere("request.status = 'ISSUED'") // только выданные
+      .groupBy('d.name')
+      .addGroupBy("DATE_FORMAT(request.createdAt, '%Y-%m')")
+      .orderBy('month', 'ASC')
+      .getRawMany();
 
-    return query.getRawMany();
+    return rawData;
   }
 
   async getReportByPatient() {
