@@ -13,10 +13,13 @@ import {
 import { UpdateDrugRequestDto } from './dto/update-drug-request.dto';
 import { Drug } from 'drug/entities/drug.entity';
 import { Department } from 'department/entities/department.entity';
+import { TelegramService } from 'telegram/telegram.service';
 
 @Injectable()
 export class DrugRequestService {
   constructor(
+    private readonly telegramService: TelegramService,
+
     @InjectRepository(DrugRequest)
     private drugRequestRepo: Repository<DrugRequest>,
 
@@ -42,7 +45,7 @@ export class DrugRequestService {
     if (!department) throw new NotFoundException('Bo‘lim topilmadi');
 
     const drug = await this.drugRepo.findOneBy({ id: drugId });
-    if (!drug) throw new NotFoundException('Dori topilmadi');
+    if (!drug) throw new NotFoundException('Dorn nomi topilmadi');
 
     // Omborda dori miqdori yetarliligini tekshirish
     if (status === DrugRequestStatus.ISSUED && drug.quantity < quantity) {
@@ -68,7 +71,17 @@ export class DrugRequestService {
       patientName,
     });
 
-    return this.drugRequestRepo.save(drugRequest);
+    await this.drugRequestRepo.save(drugRequest);
+
+    await this.telegramService.sendMessage(
+      `🟢 [🆕 Talabnoma Yaratildi 📝]
+💊 Dorn nomi: ${drugRequest.drug.name}
+🏥 Bo‘lim: ${drugRequest.department.name}
+🔢 Olingan miqdori: ${drugRequest.quantity}
+📦 Qolgan soni: ${drugRequest.drug.quantity}`,
+    );
+
+    return drugRequest;
   }
 
   findAll(): Promise<DrugRequest[]> {
@@ -133,13 +146,23 @@ export class DrugRequestService {
 
     // И другие поля, если есть
 
-    return this.drugRequestRepo.save(drugRequest);
+    const updated = await this.drugRequestRepo.save(drugRequest);
+
+    await this.telegramService.sendMessage(
+      `🟡 [✏️ Talabnoma Yangilandi]
+💊 Dorn nomi: ${drugRequest.drug.name}
+🏥 Bo‘lim: ${drugRequest.department.name}
+🔢 Olingan miqdori: ${drugRequest.quantity}
+📦 Qolgan soni: ${drugRequest.drug.quantity}`,
+    );
+
+    return updated;
   }
 
   async remove(id: number): Promise<void> {
     const drugRequest = await this.drugRequestRepo.findOne({
       where: { id },
-      relations: ['drug'],
+      relations: ['drug', 'department'],
     });
     if (!drugRequest) throw new NotFoundException('Drug request not found');
 
@@ -152,6 +175,14 @@ export class DrugRequestService {
     }
 
     await this.drugRequestRepo.delete(id);
+
+    await this.telegramService.sendMessage(
+      `🔴 [❌ Talabnoma Oʻchirildi]
+💊 Dorn nomi: ${drugRequest.drug.name}
+🏥 Bo‘lim: ${drugRequest.department.name}
+🗑 Olingan soni: ${drugRequest.quantity}
+📦 Qolgan soni: ${drugRequest.drug.quantity}`,
+    );
   }
 
   async getReportByDepartment() {

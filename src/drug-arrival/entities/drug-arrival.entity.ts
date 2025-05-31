@@ -1,10 +1,5 @@
 import { Drug } from 'drug/entities/drug.entity';
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 
 @Entity('drug_arrivals')
 export class DrugArrival {
@@ -28,4 +23,7 @@ export class DrugArrival {
 
   @Column()
   supplier: string; // Имя поставщика
+
+  @Column()
+  paymentType: string;
 }

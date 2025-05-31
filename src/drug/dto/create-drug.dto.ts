@@ -9,50 +9,75 @@ import {
 
 export class CreateDrugDto {
   @IsString()
-  name: string;
+  name: string; // Название лекарства (обязательно)
 
   @IsString()
-  unit: string; // Единица измерения (например, "таблетка")
-
-  @IsOptional()
-  @IsString()
-  description?: string; // Описание
-
-  @IsOptional()
-  @IsString()
-  photo?: string;
-
-  @IsString()
-  shelf: string;
-
-  @IsString()
-  section: string;
+  unit: string; // Единица измерения (например, "таблетка", "мл")
 
   @IsInt()
   @Min(0)
-  row: number;
+  quantity: number; // Количество в наличии (обязательно)
 
   @IsInt()
   @Min(0)
-  quantity: number;
+  minStock: number; // Минимальный запас (обязательно)
 
   @IsInt()
   @Min(0)
-  orderQuantity: number;
+  maxStock: number; // Максимальный запас (обязательно)
 
   @IsString()
-  supplier: string;
+  supplier: string; // Название поставщика (обязательно)
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  purchaseAmount: number;
+  purchaseAmount: number; // Сумма закупки (обязательно)
 
   @IsDateString()
-  arrivalDate: string;
+  expiryDate: string; // Срок годности (обязательно)
 
-  @IsDateString()
-  expiryDate: string;
-
+  @IsOptional()
   @IsString()
-  category: string; 
+  description?: string; // Описание/назначение
+
+  @IsOptional()
+  @IsString()
+  photo?: string; // Ссылка на фото или путь к изображению
+
+  @IsOptional()
+  @IsString()
+  shelf?: string; // Номер шкафа
+
+  @IsOptional()
+  @IsString()
+  section?: string; // Секция/полка
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  row?: number; // Ряд (индекс)
+
+  @IsOptional()
+  @IsString()
+  category?: string; // Категория (например, "антибиотик")
+
+  @IsOptional()
+  @IsString()
+  manufacturer?: string; // Производитель
+
+  @IsOptional()
+  @IsString()
+  barcode?: string; // Штрихкод
+
+  @IsOptional()
+  @IsString()
+  dosageForm?: string; // Форма выпуска (например, "таблетка", "ампула")
+
+  @IsOptional()
+  @IsString()
+  dosage?: string; // Дозировка (например, "500 мг")
+
+  @IsOptional()
+  @IsDateString()
+  arrivalDate?: string; // Дата последнего прихода
 }

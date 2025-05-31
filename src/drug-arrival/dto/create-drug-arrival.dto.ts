@@ -1,4 +1,4 @@
-import { IsInt, IsDateString, IsString, IsNumber, Min } from 'class-validator';
+import { IsInt, IsDateString, IsString, IsNumber, Min, IsIn } from 'class-validator';
 
 export class CreateDrugArrivalDto {
   @IsInt()
@@ -19,4 +19,7 @@ export class CreateDrugArrivalDto {
 
   @IsString()
   supplier: string;
+
+  @IsIn(['company_budget', 'company_card', 'company_cash'])
+  paymentType: string;
 }

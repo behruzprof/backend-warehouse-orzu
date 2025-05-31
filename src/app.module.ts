@@ -11,6 +11,9 @@ import { DrugRequestModule } from './drug-request/drug-request.module';
 import { DepartmentModule } from './department/department.module';
 import { DrugRequest } from 'drug-request/entities/drug-request.entity';
 import { Department } from 'department/entities/department.entity';
+import { TelegramService } from './telegram/telegram.service';
+import { TelegramModule } from 'telegram/telegram.module';
+import { DrugOrderModule } from './drug-order/drug-order.module';
 
 @Module({
   imports: [
@@ -20,7 +23,7 @@ import { Department } from 'department/entities/department.entity';
       serveRoot: '/uploads',
     }),
     TypeOrmModule.forRootAsync({
-      useFactory: () => ({
+     useFactory: () => ({
         type: 'mysql',
         host: 'mysql.railway.internal',
         port: 3306,
@@ -35,9 +38,11 @@ import { Department } from 'department/entities/department.entity';
     DrugArrivalModule,
     DrugRequestModule,
     DepartmentModule,
+    TelegramModule,
+    DrugOrderModule
   ],
   controllers: [],
-  providers: [],
+  providers: [TelegramService],
 })
 export class AppModule {}
 
