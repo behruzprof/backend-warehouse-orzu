@@ -17,7 +17,7 @@ export class DrugRequestController {
   constructor(private readonly drugRequestService: DrugRequestService) {}
 
   @Post()
-  create(@Body() createDto: CreateDrugRequestDto) {
+  create(@Body() createDto: CreateDrugRequestDto[]) {
     return this.drugRequestService.create(createDto);
   }
 

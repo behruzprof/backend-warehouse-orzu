@@ -6,11 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DrugRequest } from './entities/drug-request.entity';
-import {
-  CreateDrugRequestDto,
-  DrugRequestStatus,
-} from './dto/create-drug-request.dto';
-import { UpdateDrugRequestDto } from './dto/update-drug-request.dto';
+import { CreateDrugRequestDto } from './dto/create-drug-request.dto';
 import { Drug } from 'drug/entities/drug.entity';
 import { Department } from 'department/entities/department.entity';
 import { TelegramService } from 'telegram/telegram.service';
@@ -30,58 +26,125 @@ export class DrugRequestService {
     private departmentRepo: Repository<Department>,
   ) {}
 
-  async create(createDto: CreateDrugRequestDto): Promise<DrugRequest> {
-    const {
-      departmentId,
-      drugId,
-      quantity,
-      status = DrugRequestStatus.ISSUED,
-      patientName,
-    } = createDto;
+  async create(createDtoList: CreateDrugRequestDto[]): Promise<DrugRequest[]> {
+    const createdRequests: DrugRequest[] = [];
+    const messages: string[] = [];
 
-    const department = await this.departmentRepo.findOneBy({
-      id: departmentId,
-    });
-    if (!department) throw new NotFoundException('Bo‘lim topilmadi');
+    for (const dto of createDtoList) {
+      const { departmentId, drugId, quantity } = dto;
 
-    const drug = await this.drugRepo.findOneBy({ id: drugId });
-    if (!drug) throw new NotFoundException('Dorn nomi topilmadi');
+      const department = await this.departmentRepo.findOneBy({
+        id: departmentId,
+      });
+      if (!department) throw new NotFoundException('Bo‘lim topilmadi');
 
-    // Omborda dori miqdori yetarliligini tekshirish
-    if (status === DrugRequestStatus.ISSUED && drug.quantity < quantity) {
-      throw new BadRequestException(
-        `Omborda yetarli miqdorda ${drug.name} mavjud emas`,
+      const drug = await this.drugRepo.findOneBy({ id: drugId });
+      if (!drug) throw new NotFoundException('Dori topilmadi');
+
+      if (drug.quantity < quantity) {
+        throw new BadRequestException(
+          `Omborda yetarli ${drug.name} mavjud emas`,
+        );
+      }
+
+      drug.quantity -= quantity;
+      await this.drugRepo.save(drug);
+
+      const drugRequest = this.drugRequestRepo.create({
+        department,
+        drug,
+        quantity,
+      });
+      await this.drugRequestRepo.save(drugRequest);
+
+      createdRequests.push(drugRequest);
+      messages.push(
+        `💊 Dori: ${drug.name}\n 🔢Miqdor: ${quantity}\n📦 Qolgan: ${drug.quantity}`,
       );
     }
 
-    // Ombordagi dorilar miqdorini yangilash
-    if (status === DrugRequestStatus.ISSUED) {
-      drug.quantity -= quantity;
-    } else if (status === DrugRequestStatus.RETURNED) {
-      drug.quantity += quantity;
+    if (messages.length) {
+      await this.telegramService.sendMessage(
+        `🟢 [🆕 Talabnomalar yaratildi]\n🏥Bo‘lim: ${createdRequests[0].department.name}\n\n${messages.join('\n\n')}`,
+      );
     }
 
-    await this.drugRepo.save(drug);
+    return createdRequests;
+  }
 
-    const drugRequest = this.drugRequestRepo.create({
-      department,
-      drug,
-      quantity,
-      status,
-      patientName,
+  async update(
+    id: number,
+    updateDto: Partial<CreateDrugRequestDto>,
+  ): Promise<DrugRequest> {
+    const existingRequest = await this.drugRequestRepo.findOne({
+      where: { id },
+      relations: ['drug', 'department'],
     });
 
-    await this.drugRequestRepo.save(drugRequest);
+    if (!existingRequest) {
+      throw new NotFoundException('Talabnoma topilmadi');
+    }
+
+    const originalQuantity = existingRequest.quantity;
+
+    // Обновление department
+    if (
+      updateDto.departmentId &&
+      updateDto.departmentId !== existingRequest.department.id
+    ) {
+      const newDepartment = await this.departmentRepo.findOneBy({
+        id: updateDto.departmentId,
+      });
+      if (!newDepartment) throw new NotFoundException('Yangi bo‘lim topilmadi');
+      existingRequest.department = newDepartment;
+    }
+
+    // Обновление drug
+    if (updateDto.drugId && updateDto.drugId !== existingRequest.drug.id) {
+      const newDrug = await this.drugRepo.findOneBy({ id: updateDto.drugId });
+      if (!newDrug) throw new NotFoundException('Yangi dori topilmadi');
+
+      // Вернуть количество старому препарату
+      existingRequest.drug.quantity += originalQuantity;
+      await this.drugRepo.save(existingRequest.drug);
+
+      // Снять с нового препарата
+      if (newDrug.quantity < (updateDto.quantity ?? originalQuantity)) {
+        throw new BadRequestException(
+          `Omborda yetarli ${newDrug.name} mavjud emas`,
+        );
+      }
+
+      newDrug.quantity -= updateDto.quantity ?? originalQuantity;
+      await this.drugRepo.save(newDrug);
+
+      existingRequest.drug = newDrug;
+      existingRequest.quantity = updateDto.quantity ?? originalQuantity;
+    } else if (
+      updateDto.quantity !== undefined &&
+      updateDto.quantity !== originalQuantity
+    ) {
+      const delta = updateDto.quantity - originalQuantity;
+
+      if (existingRequest.drug.quantity < delta) {
+        throw new BadRequestException(
+          `Omborda yetarli ${existingRequest.drug.name} mavjud emas`,
+        );
+      }
+
+      existingRequest.drug.quantity -= delta;
+      await this.drugRepo.save(existingRequest.drug);
+
+      existingRequest.quantity = updateDto.quantity;
+    }
+
+    const updated = await this.drugRequestRepo.save(existingRequest);
 
     await this.telegramService.sendMessage(
-      `🟢 [🆕 Talabnoma Yaratildi 📝]
-💊 Dorn nomi: ${drugRequest.drug.name}
-🏥 Bo‘lim: ${drugRequest.department.name}
-🔢 Olingan miqdori: ${drugRequest.quantity}
-📦 Qolgan soni: ${drugRequest.drug.quantity}`,
+      `🟡 [✏️ Talabnoma yangilandi]\n💊 Dori: ${updated.drug.name}\n🏥 Bo‘lim: ${updated.department.name}\n✏️ Miqdor: ${updated.quantity}\n📦 Qolgan: ${updated.drug.quantity}`,
     );
 
-    return drugRequest;
+    return updated;
   }
 
   findAll(): Promise<DrugRequest[]> {
@@ -95,93 +158,20 @@ export class DrugRequestService {
     });
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateDrugRequestDto,
-  ): Promise<DrugRequest> {
-    const drugRequest = await this.drugRequestRepo.findOne({
-      where: { id },
-      relations: ['drug'],
-    });
-    if (!drugRequest) throw new NotFoundException('Drug request not found');
-
-    // Если меняется количество или статус — надо скорректировать остаток лекарства
-    if (updateDto.quantity !== undefined || updateDto.status !== undefined) {
-      // Возврат количества в старом статусе
-      if (drugRequest.status === DrugRequestStatus.ISSUED) {
-        drugRequest.drug.quantity += drugRequest.quantity;
-      } else if (drugRequest.status === DrugRequestStatus.RETURNED) {
-        drugRequest.drug.quantity -= drugRequest.quantity;
-      }
-
-      // Применяем новый статус и количество
-      const newQuantity = updateDto.quantity ?? drugRequest.quantity;
-      const newStatus = updateDto.status ?? drugRequest.status;
-
-      if (
-        newStatus === DrugRequestStatus.ISSUED &&
-        drugRequest.drug.quantity < newQuantity
-      ) {
-        throw new BadRequestException(
-          'Not enough drug quantity available for update',
-        );
-      }
-
-      if (newStatus === DrugRequestStatus.ISSUED) {
-        drugRequest.drug.quantity -= newQuantity;
-      } else if (newStatus === DrugRequestStatus.RETURNED) {
-        drugRequest.drug.quantity += newQuantity;
-      }
-
-      await this.drugRepo.save(drugRequest.drug);
-
-      drugRequest.quantity = newQuantity;
-      drugRequest.status = newStatus;
-    }
-
-    // Можно обновить остальные поля по аналогии
-    if (updateDto.patientName !== undefined) {
-      drugRequest.patientName = updateDto.patientName;
-    }
-
-    // И другие поля, если есть
-
-    const updated = await this.drugRequestRepo.save(drugRequest);
-
-    await this.telegramService.sendMessage(
-      `🟡 [✏️ Talabnoma Yangilandi]
-💊 Dorn nomi: ${drugRequest.drug.name}
-🏥 Bo‘lim: ${drugRequest.department.name}
-🔢 Olingan miqdori: ${drugRequest.quantity}
-📦 Qolgan soni: ${drugRequest.drug.quantity}`,
-    );
-
-    return updated;
-  }
-
   async remove(id: number): Promise<void> {
     const drugRequest = await this.drugRequestRepo.findOne({
       where: { id },
       relations: ['drug', 'department'],
     });
-    if (!drugRequest) throw new NotFoundException('Drug request not found');
 
-    if (drugRequest.status === DrugRequestStatus.ISSUED) {
-      drugRequest.drug.quantity += drugRequest.quantity;
-      await this.drugRepo.save(drugRequest.drug);
-    } else if (drugRequest.status === DrugRequestStatus.RETURNED) {
-      drugRequest.drug.quantity -= drugRequest.quantity;
-      await this.drugRepo.save(drugRequest.drug);
-    }
+    if (!drugRequest) throw new NotFoundException('Talabnoma topilmadi');
 
+    drugRequest.drug.quantity += drugRequest.quantity;
+    await this.drugRepo.save(drugRequest.drug);
     await this.drugRequestRepo.delete(id);
 
     await this.telegramService.sendMessage(
-      `🔴 [❌ Talabnoma Oʻchirildi]
-💊 Dorn nomi: ${drugRequest.drug.name}
-🏥 Bo‘lim: ${drugRequest.department.name}
-🗑 Olingan soni: ${drugRequest.quantity}
-📦 Qolgan soni: ${drugRequest.drug.quantity}`,
+      `🔴 [❌ Talabnoma o‘chirildi]\n💊 Dori: ${drugRequest.drug.name}\n🏥 Bo‘lim: ${drugRequest.department.name}\n🗑 Miqdor: ${drugRequest.quantity}\n📦 Qolgan: ${drugRequest.drug.quantity}`,
     );
   }
 
@@ -191,7 +181,6 @@ export class DrugRequestService {
       .select(`DATE(CONVERT_TZ(request.createdAt, '+00:00', '+05:00'))`, 'date')
       .addSelect('request.departmentId', 'departmentId')
       .addSelect('SUM(request.quantity)', 'totalQuantity')
-      .where('request.status = :status', { status: DrugRequestStatus.ISSUED })
       .groupBy(`DATE(CONVERT_TZ(request.createdAt, '+00:00', '+05:00'))`)
       .addGroupBy('request.departmentId')
       .orderBy('date', 'ASC')
@@ -199,33 +188,26 @@ export class DrugRequestService {
   }
 
   async getReportByDrug(drugId: number) {
-    const rawData = await this.drugRequestRepo
+    return this.drugRequestRepo
       .createQueryBuilder('request')
-      .select('d.name', 'department') // Название отделения
-      .addSelect("DATE_FORMAT(request.createdAt, '%Y-%m')", 'month') // месяц
-      .addSelect('SUM(request.quantity)', 'totalQuantity') // сумма
+      .select('d.name', 'department')
+      .addSelect("DATE_FORMAT(request.createdAt, '%Y-%m')", 'month')
+      .addSelect('SUM(request.quantity)', 'totalQuantity')
       .innerJoin('request.department', 'd')
       .where('request.drugId = :drugId', { drugId })
-      .andWhere("request.status = 'ISSUED'") // только выданные
       .groupBy('d.name')
       .addGroupBy("DATE_FORMAT(request.createdAt, '%Y-%m')")
       .orderBy('month', 'ASC')
       .getRawMany();
-
-    return rawData;
   }
 
   async getReportByPatient() {
-    const query = this.drugRequestRepo
+    return this.drugRequestRepo
       .createQueryBuilder('request')
       .select('request.patientName', 'patientName')
       .addSelect('SUM(request.quantity)', 'totalQuantity')
       .where('request.patientName IS NOT NULL')
-      .andWhere('request.status = :status', {
-        status: DrugRequestStatus.ISSUED,
-      })
-      .groupBy('request.patientName');
-
-    return query.getRawMany();
+      .groupBy('request.patientName')
+      .getRawMany();
   }
 }
