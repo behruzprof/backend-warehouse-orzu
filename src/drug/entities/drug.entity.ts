@@ -10,9 +10,6 @@ export class Drug {
   @Column()
   name: string; // Название лекарства (обязательное)
 
-  @Column()
-  unit: string; // Единица измерения (обязательное)
-
   @Column('int', { default: 0 })
   quantity: number; // Количество в наличии (обязательное)
 
