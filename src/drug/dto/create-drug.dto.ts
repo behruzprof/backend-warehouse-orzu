@@ -5,14 +5,12 @@ import {
   IsDateString,
   IsInt,
   Min,
+  IsIn,
 } from 'class-validator';
 
 export class CreateDrugDto {
   @IsString()
   name: string; // Название лекарства (обязательно)
-
-  @IsString()
-  unit: string; // Единица измерения (например, "таблетка", "мл")
 
   @IsInt()
   @Min(0)
@@ -29,20 +27,12 @@ export class CreateDrugDto {
   @IsString()
   supplier: string; // Название поставщика (обязательно)
 
-  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsNumber()
   @Min(0)
   purchaseAmount: number; // Сумма закупки (обязательно)
 
   @IsDateString()
   expiryDate: string; // Срок годности (обязательно)
-
-  @IsOptional()
-  @IsString()
-  description?: string; // Описание/назначение
-
-  @IsOptional()
-  @IsString()
-  photo?: string; // Ссылка на фото или путь к изображению
 
   @IsOptional()
   @IsString()
@@ -62,22 +52,9 @@ export class CreateDrugDto {
   category?: string; // Категория (например, "антибиотик")
 
   @IsOptional()
-  @IsString()
-  manufacturer?: string; // Производитель
-
-  @IsOptional()
-  @IsString()
-  barcode?: string; // Штрихкод
-
-  @IsOptional()
-  @IsString()
-  dosageForm?: string; // Форма выпуска (например, "таблетка", "ампула")
-
-  @IsOptional()
-  @IsString()
-  dosage?: string; // Дозировка (например, "500 мг")
-
-  @IsOptional()
   @IsDateString()
   arrivalDate?: string; // Дата последнего прихода
+
+  @IsIn(['НДС', 'КОРПОРАТИВ КАРТА', 'НАКТ'])
+  paymentType: string;
 }

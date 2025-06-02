@@ -25,17 +25,11 @@ export class Drug {
   @Column()
   supplier: string; // Поставщик (обязательное)
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  @Column()
   purchaseAmount: number; // Сумма закупки (обязательное)
 
   @Column({ type: 'date', nullable: false })
   expiryDate: Date; // Срок годности (обязательное)
-
-  @Column({ nullable: true })
-  description: string;
-
-  @Column({ nullable: true })
-  photo: string;
 
   @Column({ nullable: true })
   shelf: string;
@@ -48,18 +42,6 @@ export class Drug {
 
   @Column({ nullable: true })
   category: string;
-
-  @Column({ nullable: true })
-  manufacturer: string;
-
-  @Column({ nullable: true })
-  barcode: string;
-
-  @Column({ nullable: true })
-  dosageForm: string;
-
-  @Column({ nullable: true })
-  dosage: string;
 
   @Column({ type: 'date', nullable: true })
   arrivalDate: Date;

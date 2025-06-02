@@ -14,6 +14,7 @@ import { Department } from 'department/entities/department.entity';
 import { TelegramService } from './telegram/telegram.service';
 import { TelegramModule } from 'telegram/telegram.module';
 import { DrugOrderModule } from './drug-order/drug-order.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -39,7 +40,8 @@ import { DrugOrderModule } from './drug-order/drug-order.module';
     DrugRequestModule,
     DepartmentModule,
     TelegramModule,
-    DrugOrderModule
+    DrugOrderModule,
+    ReportModule
   ],
   controllers: [],
   providers: [TelegramService],

@@ -17,23 +17,46 @@ export class DrugService {
   ) {}
 
   // ✅ Создание нового лекарства
-  async create(createDrugDto: CreateDrugDto): Promise<Drug> {
+  async create(
+    createDrugDto: CreateDrugDto
+  ): Promise<Drug> {
     const {
-      ...drugData // остальные поля для Drug
+      name,
+      quantity,
+      minStock,
+      maxStock,
+      supplier,
+      purchaseAmount,
+      expiryDate,
+      arrivalDate,
+      paymentType,
+      ...optionalFields
     } = createDrugDto;
 
     // Шаг 1: создаем лекарство
-    const drug = this.drugRepository.create({ ...drugData });
+    const drug = this.drugRepository.create({
+      name,
+      quantity,
+      minStock,
+      maxStock,
+      supplier,
+      purchaseAmount,
+      expiryDate: new Date(expiryDate),
+      arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
+      ...optionalFields,
+    });
+
     const savedDrug = await this.drugRepository.save(drug);
 
     // Шаг 2: создаем запись о приходе
     const drugArrival = this.drugArrivalRepository.create({
-      drug,
-      arrivalDate: drug.arrivalDate,
-      expiryDate: drug.expiryDate,
-      quantity: drug.quantity,
-      purchaseAmount: drug.purchaseAmount,
-      supplier: drug.supplier,
+      drug: savedDrug,
+      arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
+      expiryDate: new Date(expiryDate),
+      quantity,
+      purchaseAmount,
+      supplier,
+      paymentType,
     });
 
     await this.drugArrivalRepository.save(drugArrival);
