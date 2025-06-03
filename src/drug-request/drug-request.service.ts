@@ -66,6 +66,7 @@ export class DrugRequestService {
     if (messages.length) {
       await this.telegramService.sendMessage(
         `🟢 [🆕 Talabnomalar yaratildi]\n🏥Bo‘lim: ${createdRequests[0].department.name}\n\n${messages.join('\n\n')}`,
+        { isPrivate: false },
       );
     }
 
@@ -142,6 +143,7 @@ export class DrugRequestService {
 
     await this.telegramService.sendMessage(
       `🟡 [✏️ Talabnoma yangilandi]\n💊 Dori: ${updated.drug.name}\n🏥 Bo‘lim: ${updated.department.name}\n✏️ Miqdor: ${updated.quantity}\n📦 Qolgan: ${updated.drug.quantity}`,
+      { isPrivate: true },
     );
 
     return updated;
@@ -172,6 +174,7 @@ export class DrugRequestService {
 
     await this.telegramService.sendMessage(
       `🔴 [❌ Talabnoma o‘chirildi]\n💊 Dori: ${drugRequest.drug.name}\n🏥 Bo‘lim: ${drugRequest.department.name}\n🗑 Miqdor: ${drugRequest.quantity}\n📦 Qolgan: ${drugRequest.drug.quantity}`,
+      { isPrivate: true },
     );
   }
 
