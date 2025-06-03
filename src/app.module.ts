@@ -24,7 +24,7 @@ import { ReportModule } from './report/report.module';
       serveRoot: '/uploads',
     }),
     TypeOrmModule.forRootAsync({
-     useFactory: () => ({
+      useFactory: () => ({
         type: 'mysql',
         host: 'mysql.railway.internal',
         port: 3306,
@@ -41,7 +41,7 @@ import { ReportModule } from './report/report.module';
     DepartmentModule,
     TelegramModule,
     DrugOrderModule,
-    ReportModule
+    ReportModule,
   ],
   controllers: [],
   providers: [TelegramService],

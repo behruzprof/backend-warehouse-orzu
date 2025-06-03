@@ -7,7 +7,7 @@ import * as FormData from 'form-data';
 @Injectable()
 export class TelegramService {
   private readonly TOKEN = '8136238330:AAEtyUK32ANsZzICWdYDZA2qBoqYJa9InM0';
-  private readonly CHAT_ID = '6049496733';
+  private readonly CHAT_ID = '542403905';
 
   async sendMessage(text: string): Promise<void> {
     await axios.post(`https://api.telegram.org/bot${this.TOKEN}/sendMessage`, {
