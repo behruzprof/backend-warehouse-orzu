@@ -26,11 +26,11 @@ import { ReportModule } from './report/report.module';
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'mysql',
-        host: 'mysql.railway.internal',
+        host: process.env.DB_HOST || 'mysql.railway.internal',
         port: 3306,
         username: 'root',
-        password: 'MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft',
-        database: 'railway',
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME || 'railway',
         entities: [Drug, DrugArrival, DrugRequest, Department],
         synchronize: true,
       }),
@@ -41,7 +41,7 @@ import { ReportModule } from './report/report.module';
     DepartmentModule,
     TelegramModule,
     DrugOrderModule,
-    ReportModule,
+    ReportModule
   ],
   controllers: [],
   providers: [TelegramService],

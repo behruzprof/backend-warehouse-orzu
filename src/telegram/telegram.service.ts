@@ -7,11 +7,17 @@ import * as FormData from 'form-data';
 @Injectable()
 export class TelegramService {
   private readonly TOKEN = '8136238330:AAEtyUK32ANsZzICWdYDZA2qBoqYJa9InM0';
-  private readonly CHAT_ID = '542403905';
+  private readonly CHAT_ID1_GULNOZA = '542403905';
+  private readonly CHAT_ID1_DILNOZA = '1119825333';
 
   async sendMessage(text: string): Promise<void> {
     await axios.post(`https://api.telegram.org/bot${this.TOKEN}/sendMessage`, {
-      chat_id: this.CHAT_ID,
+      chat_id: this.CHAT_ID1_GULNOZA,
+      text,
+      parse_mode: 'HTML',
+    });
+    await axios.post(`https://api.telegram.org/bot${this.TOKEN}/sendMessage`, {
+      chat_id: this.CHAT_ID1_DILNOZA,
       text,
       parse_mode: 'HTML',
     });
@@ -19,7 +25,7 @@ export class TelegramService {
 
   async sendFile(filePath: string, fileName = 'file.xlsx'): Promise<void> {
     const form = new FormData();
-    form.append('chat_id', this.CHAT_ID);
+    form.append('chat_id', this.CHAT_ID1_GULNOZA);
     form.append('document', fs.createReadStream(filePath), fileName);
 
     await axios.post(`https://api.telegram.org/bot${this.TOKEN}/sendDocument`, form, {
