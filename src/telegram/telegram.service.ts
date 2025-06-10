@@ -9,6 +9,7 @@ export class TelegramService {
   private readonly TOKEN = '8136238330:AAEtyUK32ANsZzICWdYDZA2qBoqYJa9InM0';
   private readonly CHAT_ID1_GULNOZA = '542403905';
   private readonly CHAT_ID1_DILNOZA = '1119825333';
+  // private readonly CHAT_ID1_BEHRUZ = '6049496733';
 
   async sendMessage(
     text: string,

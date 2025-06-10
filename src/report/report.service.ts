@@ -1,110 +1,109 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ExcelJS from 'exceljs';
 
-import { Drug } from 'drug/entities/drug.entity';
 import { DrugRequest } from 'drug-request/entities/drug-request.entity';
-import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
 import { TelegramService } from 'telegram/telegram.service';
 
 @Injectable()
 export class ReportService {
   constructor(
     private readonly telegramService: TelegramService,
-
-    @InjectRepository(Drug)
-    private readonly drugRepository: Repository<Drug>,
-
     @InjectRepository(DrugRequest)
     private readonly drugRequestRepository: Repository<DrugRequest>,
-
-    @InjectRepository(DrugArrival)
-    private readonly drugArrivalRepository: Repository<DrugArrival>,
   ) {}
 
-  async create(month: number, year: number) {
-    const drugs = await this.drugRepository.find();
-    const arrivals = await this.drugArrivalRepository.find({
-      relations: ['drug'],
-    });
+  async createDailyUsageReport(day: string, month: string, year: string) {
+    const date = new Date(`${year}-${month}-${day}`);
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate() + 1);
+
     const requests = await this.drugRequestRepository.find({
-      relations: ['drug'],
+      relations: ['department', 'drug'],
+      where: {
+        createdAt: Between(date, nextDate),
+      },
     });
+
+    const departmentsMap = new Map<number, string>();
+    const drugsMap = new Map<number, string>();
+
+    requests.forEach((req) => {
+      departmentsMap.set(req.department.id, req.department.name);
+      drugsMap.set(req.drug.id, req.drug.name);
+    });
+
+    const departmentIds = Array.from(departmentsMap.keys());
+    const drugIds = Array.from(drugsMap.keys());
+
+    const usage: Record<string, Record<string, number>> = {};
+    for (const req of requests) {
+      const deptId = String(req.department.id);
+      const drugId = String(req.drug.id);
+
+      if (!usage[deptId]) usage[deptId] = {};
+      if (!usage[deptId][drugId]) usage[deptId][drugId] = 0;
+
+      usage[deptId][drugId] += req.quantity;
+    }
 
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Отчёт');
+    const sheet = workbook.addWorksheet(`Расходы ${day}.${month}.${year}`);
 
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const dayHeaders = Array.from({ length: daysInMonth }, (_, i) =>
-      (i + 1).toString(),
-    );
+    // Заголовки
+    const drugNames = drugIds.map((id) => drugsMap.get(id));
+    const headerRow = sheet.addRow(['Отделение', ...drugNames]);
 
-    const headers = [
-      '№',
-      'Название лекарства',
-      'Ед. изм.',
-      'Остаток кол-во',
-      'Остаток сумма',
-      'Приход кол-во',
-      'Приход сумма',
-      'Сумма без НДС',
-      ...dayHeaders,
-      'Общий расход',
-      'Остаток',
-      'Сумма',
-      'Ост. след. месяц',
-      'Сумма',
-    ];
-    sheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD3D3D3' },
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+    });
 
-    drugs.forEach((drug, index) => {
-      const row: (string | number)[] = [index + 1, drug.name, 'шт'];
+    // Тело таблицы
+    for (const deptId of departmentIds) {
+      const deptName = departmentsMap.get(deptId);
+      const row = [deptName];
 
-      const prevStockQty = drug.quantity ?? 0;
-      const prevStockSum = (drug.purchaseAmount ?? 0) * prevStockQty;
-      row.push(prevStockQty, prevStockSum);
+      for (const drugId of drugIds) {
+        // @ts-ignore
+        row.push(usage[deptId]?.[drugId] || 0);
+      }
 
-      const arrivalsForDrug = arrivals.filter(
-        (arrival) =>
-          arrival.drug.id === drug.id &&
-          new Date(arrival.arrivalDate).getMonth() + 1 === month &&
-          new Date(arrival.arrivalDate).getFullYear() === year,
-      );
-
-      const arrivalQty = arrivalsForDrug.reduce(
-        (sum, a) => sum + a.quantity,
-        0,
-      );
-      const arrivalSum = arrivalsForDrug.reduce(
-        (sum, a) => sum + Number(a.purchaseAmount),
-        0,
-      );
-
-      const sumWithoutNDS = +(arrivalSum / 1.12).toFixed(2);
-      row.push(arrivalQty, arrivalSum, sumWithoutNDS);
-
-      const daily = Array(daysInMonth).fill(0);
-      requests.forEach((req) => {
-        const date = new Date(req.createdAt);
-        if (
-          req.drug.id === drug.id &&
-          date.getMonth() + 1 === month &&
-          date.getFullYear() === year
-        ) {
-          const day = date.getDate() - 1;
-          daily[day] += req.quantity;
-        }
+      const newRow = sheet.addRow(row);
+      newRow.eachCell((cell) => {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
       });
-      row.push(...daily);
+    }
 
-      const totalSpent = daily.reduce((a, b) => a + b, 0);
-      const finalStock = prevStockQty + arrivalQty - totalSpent;
-      row.push(totalSpent, finalStock, '', finalStock, '');
-
-      sheet.addRow(row);
+    // Автоширина колонок
+    sheet.columns.forEach((column) => {
+      let maxLength = 10;
+      // @ts-ignore
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const text = cell.value?.toString() || '';
+        maxLength = Math.max(maxLength, text.length + 2);
+      });
+      column.width = maxLength;
     });
 
     const reportsDir = path.resolve(__dirname, '..', '..', 'reports');
@@ -112,8 +111,14 @@ export class ReportService {
       fs.mkdirSync(reportsDir, { recursive: true });
     }
 
-    const filePath = path.join(reportsDir, `report-${year}-${month}.xlsx`);
+    const filePath = path.join(
+      reportsDir,
+      `daily-report-${year}-${month}-${day}.xlsx`,
+    );
     await workbook.xlsx.writeFile(filePath);
-    await this.telegramService.sendFile(filePath, `Отчёт за ${month}/${year}.xlsx`);
+    await this.telegramService.sendFile(
+      filePath,
+      `Расход по отделениям за ${day} ${month} ${year}.xlsx`,
+    );
   }
 }

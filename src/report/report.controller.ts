@@ -6,6 +6,6 @@ export class ReportController {
 
   @Post()
   create(@Body() body) {
-    return this.reportService.create(body.month, body.year);
+    return this.reportService.createDailyUsageReport(body.day, body.month, body.year);
   }
 }
