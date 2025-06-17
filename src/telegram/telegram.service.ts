@@ -9,7 +9,7 @@ export class TelegramService {
   private readonly TOKEN = '8136238330:AAEtyUK32ANsZzICWdYDZA2qBoqYJa9InM0';
   private readonly CHAT_ID1_GULNOZA = '542403905';
   private readonly CHAT_ID1_DILNOZA = '1119825333';
-  // private readonly CHAT_ID1_BEHRUZ = '6049496733';
+  private readonly CHAT_ID1_BEHRUZ = '6049496733';
 
   async sendMessage(
     text: string,
@@ -34,7 +34,7 @@ export class TelegramService {
 
   async sendFile(filePath: string, fileName = 'file.xlsx'): Promise<void> {
     const form = new FormData();
-    form.append('chat_id', this.CHAT_ID1_GULNOZA);
+    form.append('chat_id', this.CHAT_ID1_BEHRUZ);
     form.append('document', fs.createReadStream(filePath), fileName);
 
     await axios.post(
