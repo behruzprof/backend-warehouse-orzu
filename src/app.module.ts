@@ -28,12 +28,12 @@ import { DraftOrder } from 'draft-order/entities/draft-order.entity';
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'mysql',
-        host: process.env.DB_HOST || 'mysql.railway.internal',
+        host: 'mysql.railway.internal',
         port: 3306,
         username: 'root',
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME || 'railway',
-        entities: [Drug, DrugArrival, DrugRequest, Department, DraftOrder],
+        password: 'MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft',
+        database: 'railway',
+        entities: [Drug, DrugArrival, DrugRequest, Department],
         synchronize: true,
       }),
     }),
