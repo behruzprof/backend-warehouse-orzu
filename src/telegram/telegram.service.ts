@@ -9,7 +9,8 @@ export class TelegramService {
   private readonly TOKEN = '8136238330:AAEtyUK32ANsZzICWdYDZA2qBoqYJa9InM0';
   private readonly CHAT_ID1_GULNOZA = '542403905';
   private readonly CHAT_ID1_DILNOZA = '1119825333';
-  // private readonly CHAT_ID1_BEHRUZ = '6049496733';
+  private readonly CHAT_ID1_SHAXBOZ = '732458676';
+  private readonly CHAT_ID1_BEHRUZ = '6049496733';
 
   async sendMessage(
     text: string,
@@ -25,6 +26,22 @@ export class TelegramService {
         `https://api.telegram.org/bot${this.TOKEN}/sendMessage`,
         {
           chat_id: this.CHAT_ID1_DILNOZA,
+          text,
+          parse_mode: 'HTML',
+        },
+      );
+      await axios.post(
+        `https://api.telegram.org/bot${this.TOKEN}/sendMessage`,
+        {
+          chat_id: this.CHAT_ID1_SHAXBOZ,
+          text,
+          parse_mode: 'HTML',
+        },
+      );
+      await axios.post(
+        `https://api.telegram.org/bot${this.TOKEN}/sendMessage`,
+        {
+          chat_id: this.CHAT_ID1_BEHRUZ,
           text,
           parse_mode: 'HTML',
         },
