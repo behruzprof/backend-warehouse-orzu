@@ -95,6 +95,35 @@ export class ReportService {
       });
     }
 
+    // ✅ Общая строка "Общий расход"
+    const totalRow = ['Общий расход'];
+
+    for (const drugId of drugIds) {
+      let total = 0;
+      for (const deptId of departmentIds) {
+        total += usage[deptId]?.[drugId] || 0;
+      }
+      // @ts-ignore
+      totalRow.push(total);
+    }
+
+    const summaryRow = sheet.addRow(totalRow);
+    summaryRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE2EFDA' },
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+    });
+
     // Автоширина колонок
     sheet.columns.forEach((column) => {
       let maxLength = 10;
@@ -118,7 +147,7 @@ export class ReportService {
     await workbook.xlsx.writeFile(filePath);
     await this.telegramService.sendFile(
       filePath,
-      `Расход по отделениям за ${day} ${month} ${year}.xlsx`,
+      `Расход по отделениям за ${day}.${month}.${year}.xlsx`,
     );
   }
 }

@@ -16,7 +16,6 @@ import { TelegramModule } from 'telegram/telegram.module';
 import { DrugOrderModule } from './drug-order/drug-order.module';
 import { ReportModule } from './report/report.module';
 import { DraftOrderModule } from './draft-order/draft-order.module';
-import { DraftOrder } from 'draft-order/entities/draft-order.entity';
 
 @Module({
   imports: [
@@ -44,7 +43,7 @@ import { DraftOrder } from 'draft-order/entities/draft-order.entity';
     TelegramModule,
     DrugOrderModule,
     ReportModule,
-    DraftOrderModule
+    DraftOrderModule,
   ],
   controllers: [],
   providers: [TelegramService],
