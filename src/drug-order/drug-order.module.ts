@@ -8,5 +8,6 @@ import { Drug } from 'drug/entities/drug.entity';
   imports: [TypeOrmModule.forFeature([Drug])],
   controllers: [DrugOrderController],
   providers: [DrugOrderService],
+  exports: [DrugOrderService]
 })
 export class DrugOrderModule {}

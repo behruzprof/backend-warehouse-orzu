@@ -15,6 +15,8 @@ import { TelegramService } from './telegram/telegram.service';
 import { TelegramModule } from 'telegram/telegram.module';
 import { DrugOrderModule } from './drug-order/drug-order.module';
 import { ReportModule } from './report/report.module';
+import { DraftOrderModule } from './draft-order/draft-order.module';
+import { DraftOrder } from 'draft-order/entities/draft-order.entity';
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { ReportModule } from './report/report.module';
         username: 'root',
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME || 'railway',
-        entities: [Drug, DrugArrival, DrugRequest, Department],
+        entities: [Drug, DrugArrival, DrugRequest, Department, DraftOrder],
         synchronize: true,
       }),
     }),
@@ -41,7 +43,8 @@ import { ReportModule } from './report/report.module';
     DepartmentModule,
     TelegramModule,
     DrugOrderModule,
-    ReportModule
+    ReportModule,
+    DraftOrderModule
   ],
   controllers: [],
   providers: [TelegramService],
