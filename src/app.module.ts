@@ -16,6 +16,7 @@ import { TelegramModule } from 'telegram/telegram.module';
 import { DrugOrderModule } from './drug-order/drug-order.module';
 import { ReportModule } from './report/report.module';
 import { DraftOrderModule } from './draft-order/draft-order.module';
+import { DraftOrder } from 'draft-order/entities/draft-order.entity';
 
 @Module({
   imports: [
@@ -26,13 +27,13 @@ import { DraftOrderModule } from './draft-order/draft-order.module';
     }),
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
-        type: 'mysql',
+       type: 'mysql',
         host: 'mysql.railway.internal',
         port: 3306,
         username: 'root',
         password: 'MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft',
         database: 'railway',
-        entities: [Drug, DrugArrival, DrugRequest, Department],
+        entities: [Drug, DrugArrival, DrugRequest, Department, DraftOrder],
         synchronize: true,
       }),
     }),
@@ -43,7 +44,7 @@ import { DraftOrderModule } from './draft-order/draft-order.module';
     TelegramModule,
     DrugOrderModule,
     ReportModule,
-    DraftOrderModule,
+    DraftOrderModule
   ],
   controllers: [],
   providers: [TelegramService],
