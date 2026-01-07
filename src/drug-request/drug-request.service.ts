@@ -24,7 +24,7 @@ export class DrugRequestService {
 
     @InjectRepository(Department)
     private departmentRepo: Repository<Department>,
-  ) { }
+  ) {}
 
   async create(createDtoList: CreateDrugRequestDto[]): Promise<DrugRequest[]> {
     const createdRequests: DrugRequest[] = [];
@@ -50,25 +50,26 @@ export class DrugRequestService {
       drug.quantity -= quantity;
       await this.drugRepo.save(drug);
 
-      let drugRequest =
-        this.drugRequestRepo.create({
-          department,
-          drug,
-          quantity,
-        });
+      let drugRequest = this.drugRequestRepo.create({
+        department,
+        drug,
+        quantity,
+      });
 
-      if (department.name === "НОЧ_МУОЛАЖА_ШАХБОЗ" || 
-        department.name === "НОЧ_МУОЛАЖА_ШОХСАНАМ" ||
-        department.name === "НОЧ_МУОЛАЖА_БУНЁД" ||
-        department.name === "НОЧ_МУОЛАЖА_НАРГИЗА" ||
-        department.name === "НОЧ_МУОЛАЖА_АКМАРАЛ" ||
-        department.name === "НОЧ_МУОЛАЖА_ЖАНАР" ||
-        department.name === "НОЧ_МУОЛАЖА_САБОХАТ" ||
-        department.name === "НОЧ_МУОЛАЖА_FERUZA" ||
-
+      if (
+        department.name === 'НОЧ_МУОЛАЖА_ШАХБОЗ' ||
+        department.name === 'НОЧ_МУОЛАЖА_ШОХСАНАМ' ||
+        department.name === 'НОЧ_МУОЛАЖА_БУНЁД' ||
+        department.name === 'НОЧ_МУОЛАЖА_НАРГИЗА' ||
+        department.name === 'НОЧ_МУОЛАЖА_АКМАРАЛ' ||
+        department.name === 'НОЧ_МУОЛАЖА_ЖАНАР' ||
+        department.name === 'НОЧ_МУОЛАЖА_САБОХАТ' ||
+        department.name === 'НОЧ_МУОЛАЖА_FERUZA'
       ) {
         const now = new Date();
-        const localTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+        const localTime = new Date(
+          now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }),
+        );
         const hour = localTime.getHours();
 
         if (hour >= 0 && hour < 11) {
