@@ -57,7 +57,16 @@ export class DrugRequestService {
           quantity,
         });
 
-      if (department.name === "Ночной муолажа") {
+      if (department.name === "НОЧ_МУОЛАЖА_ШАХБОЗ" || 
+        department.name === "НОЧ_МУОЛАЖА_ШОХСАНАМ" ||
+        department.name === "НОЧ_МУОЛАЖА_БУНЁД" ||
+        department.name === "НОЧ_МУОЛАЖА_НАРГИЗА" ||
+        department.name === "НОЧ_МУОЛАЖА_АКМАРАЛ" ||
+        department.name === "НОЧ_МУОЛАЖА_ЖАНАР" ||
+        department.name === "НОЧ_МУОЛАЖА_САБОХАТ" ||
+        department.name === "НОЧ_МУОЛАЖА_FERUZA" ||
+
+      ) {
         const now = new Date();
         const localTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
         const hour = localTime.getHours();
