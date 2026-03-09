@@ -8,6 +8,8 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  ParseArrayPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { DrugService } from './drug.service';
 import { CreateDrugDto } from './dto/create-drug.dto';
@@ -19,8 +21,7 @@ export class DrugController {
 
   /**
    * Создание нового лекарства
-   * POST /drug
-   * Тело запроса должно соответствовать CreateDrugDto
+   * POST /drugs
    */
   @Post()
   create(@Body() createDrugDto: CreateDrugDto) {
@@ -28,29 +29,43 @@ export class DrugController {
   }
 
   /**
-   * Получить все лекарства
-   * GET /drug
+   * Получить все лекарства (с пагинацией и поиском)
+   * GET /drugs?page=1&limit=10&search=Аспирин
    */
   @Get()
-  findAll() {
-    return this.drugService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+  ) {
+    return this.drugService.findAll(page, limit, search);
   }
 
+  /**
+   * Получить лекарства по категории
+   * GET /drugs/by-category?category=Антибиотики
+   */
   @Get('by-category')
   findByCategory(@Query('category') category: string) {
     return this.drugService.findByExactCategory(category);
   }
 
   /**
-   * Получить одно лекарство по ID
-   * GET /drug/:id
-   * Используем ParseIntPipe для преобразования id из строки в число
+   * Получить лекарства по массиву ID (например, для корзины)
+   * GET /drugs/by-ids?ids=1,2,3
    */
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.drugService.findOne(id);
+  @Get('by-ids')
+  findByIds(
+    @Query('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
+    ids: number[],
+  ) {
+    return this.drugService.findByIds(ids);
   }
 
+  /**
+   * Быстрый поиск для подсказок
+   * GET /drugs/search?query=пара
+   */
   @Get('search')
   async search(@Query('query') query: string) {
     if (!query || query.trim().length === 0) {
@@ -59,15 +74,28 @@ export class DrugController {
     return this.drugService.searchByName(query.trim());
   }
 
+  /**
+   * Полный поиск без пагинации (если нужно)
+   * GET /drugs/search/all?query=пара
+   */
   @Get('search/all')
   async searchAll(@Query('query') query: string) {
     return this.drugService.searchByNameAndGetAll(query.trim());
   }
 
   /**
+   * Получить одно лекарство по ID
+   * GET /drugs/:id
+   * ВАЖНО: динамические параметры (:id) всегда должны быть в конце!
+   */
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.drugService.findOne(id);
+  }
+
+  /**
    * Обновить информацию о лекарстве
-   * PATCH /drug/:id
-   * Тело запроса должно соответствовать UpdateDrugDto
+   * PATCH /drugs/:id
    */
   @Patch(':id')
   update(
@@ -79,7 +107,7 @@ export class DrugController {
 
   /**
    * Удалить лекарство
-   * DELETE /drug/:id
+   * DELETE /drugs/:id
    */
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {

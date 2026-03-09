@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { Like, Repository, In, FindOptionsWhere } from 'typeorm';
 import { Drug } from './entities/drug.entity';
 import { CreateDrugDto } from './dto/create-drug.dto';
 import { UpdateDrugDto } from './dto/update-drug.dto';
@@ -8,7 +8,6 @@ import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
 
 @Injectable()
 export class DrugService {
-  // Внедрение репозитория сущности Drug
   constructor(
     @InjectRepository(Drug)
     private readonly drugRepository: Repository<Drug>,
@@ -17,9 +16,7 @@ export class DrugService {
   ) {}
 
   // ✅ Создание нового лекарства
-  async create(
-    createDrugDto: CreateDrugDto
-  ): Promise<Drug> {
+  async create(createDrugDto: CreateDrugDto): Promise<Drug> {
     const {
       name,
       quantity,
@@ -64,9 +61,39 @@ export class DrugService {
     return savedDrug;
   }
 
-  // ✅ Получить все лекарства
-  async findAll(): Promise<Drug[]> {
-    return await this.drugRepository.find();
+  // ✅ Получить все лекарства (с пагинацией и опциональным поиском)
+  async findAll(page: number, limit: number, search?: string) {
+    const skip = (page - 1) * limit;
+
+    const where: FindOptionsWhere<Drug> = search
+      ? { name: Like(`%${search}%`) }
+      : {};
+
+    const [data, total] = await this.drugRepository.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: { id: 'DESC' }, // Сначала новые записи
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // ✅ Получение лекарств по массиву ID
+  async findByIds(ids: number[]): Promise<Drug[]> {
+    if (!ids || ids.length === 0) return [];
+    
+    return this.drugRepository.find({
+      where: {
+        id: In(ids),
+      },
+    });
   }
 
   // ✅ Получить одно лекарство по ID
@@ -78,6 +105,7 @@ export class DrugService {
     return drug;
   }
 
+  // ✅ Получить по точной категории
   async findByExactCategory(category: string): Promise<Drug[]> {
     return this.drugRepository.find({
       where: { category },
@@ -86,30 +114,32 @@ export class DrugService {
 
   // ✅ Обновление информации о лекарстве
   async update(id: number, updateDrugDto: UpdateDrugDto): Promise<Drug> {
-    const drug = await this.findOne(id); // Проверка на существование
-    const updated = Object.assign(drug, updateDrugDto); // Обновление данных
-    return await this.drugRepository.save(updated); // Сохранение
+    const drug = await this.findOne(id);
+    const updated = Object.assign(drug, updateDrugDto);
+    return await this.drugRepository.save(updated);
   }
 
   // ✅ Удаление лекарства по ID
   async remove(id: number): Promise<void> {
-    const drug = await this.findOne(id); // Проверка на существование
-    await this.drugRepository.remove(drug); // Удаление
+    const drug = await this.findOne(id);
+    await this.drugRepository.remove(drug);
   }
 
+  // ✅ Поиск по имени с лимитом (для подсказок)
   async searchByName(query: string): Promise<Drug[]> {
     return this.drugRepository.find({
       where: {
-        name: Like(`%${query}%`), // Для PostgreSQL. Для MySQL может быть просто Like
+        name: Like(`%${query}%`),
       },
-      take: 10, // Ограничиваем количество подсказок
+      take: 10,
     });
   }
 
+  // ✅ Поиск по имени без лимита
   async searchByNameAndGetAll(query: string): Promise<Drug[]> {
     return this.drugRepository.find({
       where: {
-        name: Like(`%${query}%`), // Для PostgreSQL. Для MySQL может быть просто Like
+        name: Like(`%${query}%`),
       },
     });
   }
