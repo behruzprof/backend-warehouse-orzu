@@ -18,51 +18,35 @@ export class DrugService {
   // ✅ Создание нового лекарства
   async create(createDrugDto: CreateDrugDto): Promise<Drug> {
     const {
-      name,
-      quantity,
-      minStock,
-      maxStock,
-      supplier,
-      purchaseAmount,
-      expiryDate,
-      arrivalDate,
-      paymentType,
-      ...optionalFields
+      name, quantity, minStock, maxStock, supplier,
+      purchaseAmount, expiryDate, arrivalDate, paymentType, ...optionalFields
     } = createDrugDto;
 
-    // Шаг 1: создаем лекарство
     const drug = this.drugRepository.create({
-      name,
-      quantity,
-      minStock,
-      maxStock,
-      supplier,
-      purchaseAmount,
+      name, quantity, minStock, maxStock, supplier, purchaseAmount,
       expiryDate: new Date(expiryDate),
       arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
       ...optionalFields,
     });
-
     const savedDrug = await this.drugRepository.save(drug);
 
-    // Шаг 2: создаем запись о приходе
     const drugArrival = this.drugArrivalRepository.create({
       drug: savedDrug,
       arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
-      expiryDate: new Date(expiryDate),
-      quantity,
-      purchaseAmount,
-      supplier,
-      paymentType,
+      expiryDate: new Date(expiryDate), quantity, purchaseAmount, supplier, paymentType,
     });
-
     await this.drugArrivalRepository.save(drugArrival);
 
     return savedDrug;
   }
 
-  // ✅ Получить все лекарства (с пагинацией и опциональным поиском)
-  async findAll(page: number, limit: number, search?: string) {
+  // ⏪ СТАРЫЙ МЕТОД: Получить все лекарства (без пагинации, как было раньше)
+  async findAll(): Promise<Drug[]> {
+    return await this.drugRepository.find();
+  }
+
+  // 🆕 НОВЫЙ МЕТОД: Получить все лекарства (с пагинацией и опциональным поиском)
+  async findAllPaginated(page: number, limit: number, search?: string) {
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<Drug> = search
@@ -73,7 +57,7 @@ export class DrugService {
       where,
       skip,
       take: limit,
-      order: { id: 'DESC' }, // Сначала новые записи
+      order: { id: 'DESC' }, 
     });
 
     return {
@@ -85,7 +69,7 @@ export class DrugService {
     };
   }
 
-  // ✅ Получение лекарств по массиву ID
+  // 🆕 НОВЫЙ МЕТОД: Получение лекарств по массиву ID
   async findByIds(ids: number[]): Promise<Drug[]> {
     if (!ids || ids.length === 0) return [];
     
@@ -125,12 +109,10 @@ export class DrugService {
     await this.drugRepository.remove(drug);
   }
 
-  // ✅ Поиск по имени с лимитом (для подсказок)
+  // ✅ Поиск по имени с лимитом
   async searchByName(query: string): Promise<Drug[]> {
     return this.drugRepository.find({
-      where: {
-        name: Like(`%${query}%`),
-      },
+      where: { name: Like(`%${query}%`) },
       take: 10,
     });
   }
@@ -138,9 +120,7 @@ export class DrugService {
   // ✅ Поиск по имени без лимита
   async searchByNameAndGetAll(query: string): Promise<Drug[]> {
     return this.drugRepository.find({
-      where: {
-        name: Like(`%${query}%`),
-      },
+      where: { name: Like(`%${query}%`) },
     });
   }
 }

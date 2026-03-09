@@ -1,15 +1,6 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  ParseIntPipe,
-  Query,
-  ParseArrayPipe,
-  DefaultValuePipe,
+  Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
+  ParseArrayPipe, DefaultValuePipe,
 } from '@nestjs/common';
 import { DrugService } from './drug.service';
 import { CreateDrugDto } from './dto/create-drug.dto';
@@ -29,16 +20,25 @@ export class DrugController {
   }
 
   /**
-   * Получить все лекарства (с пагинацией и поиском)
-   * GET /drugs?page=1&limit=10&search=Аспирин
+   * ⏪ СТАРЫЙ МЕТОД: Получить все лекарства единым списком
+   * GET /drugs
    */
   @Get()
-  findAll(
+  findAll() {
+    return this.drugService.findAll();
+  }
+
+  /**
+   * 🆕 НОВЫЙ МЕТОД: Получить все лекарства (с пагинацией и поиском)
+   * GET /drugs/paginated?page=1&limit=10&search=Аспирин
+   */
+  @Get('paginated')
+  findAllPaginated(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('search') search?: string,
   ) {
-    return this.drugService.findAll(page, limit, search);
+    return this.drugService.findAllPaginated(page, limit, search);
   }
 
   /**
@@ -51,7 +51,7 @@ export class DrugController {
   }
 
   /**
-   * Получить лекарства по массиву ID (например, для корзины)
+   * 🆕 НОВЫЙ МЕТОД: Получить лекарства по массиву ID
    * GET /drugs/by-ids?ids=1,2,3
    */
   @Get('by-ids')
@@ -86,7 +86,6 @@ export class DrugController {
   /**
    * Получить одно лекарство по ID
    * GET /drugs/:id
-   * ВАЖНО: динамические параметры (:id) всегда должны быть в конце!
    */
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
