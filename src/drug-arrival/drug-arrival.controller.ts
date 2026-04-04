@@ -8,12 +8,15 @@ import {
   Delete,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { DrugArrivalService } from './drug-arrival.service';
 import { CreateDrugArrivalDto } from './dto/create-drug-arrival.dto';
 import { UpdateDrugArrivalDto } from './dto/update-drug-arrival.dto';
 import { ParseIntPipe } from '@nestjs/common';
+import { ApiKeyGuard } from 'auth/api-key.guard';
 
+@UseGuards(ApiKeyGuard)
 @Controller('drug-arrivals')
 export class DrugArrivalController {
   constructor(private readonly drugArrivalService: DrugArrivalService) {}

@@ -1,5 +1,8 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { ReportService } from './report.service';
+import { ApiKeyGuard } from 'auth/api-key.guard';
+
+@UseGuards(ApiKeyGuard)
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}

@@ -1,7 +1,9 @@
-import { Controller, Post, Body, Delete, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Delete, Param, Get, UseGuards } from '@nestjs/common';
 import { DraftOrderService } from './draft-order.service';
 import { CreateDraftOrderDto } from './dto/create-draft-order.dto';
+import { ApiKeyGuard } from 'auth/api-key.guard';
 
+@UseGuards(ApiKeyGuard)
 @Controller('draft-order')
 export class DraftOrderController {
   constructor(private readonly draftOrderService: DraftOrderService) {}

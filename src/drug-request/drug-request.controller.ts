@@ -7,11 +7,14 @@ import {
   Delete,
   Body,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { DrugRequestService } from './drug-request.service';
 import { CreateDrugRequestDto } from './dto/create-drug-request.dto';
 import { UpdateDrugRequestDto } from './dto/update-drug-request.dto';
+import { ApiKeyGuard } from 'auth/api-key.guard';
 
+@UseGuards(ApiKeyGuard)
 @Controller('drug-requests')
 export class DrugRequestController {
   constructor(private readonly drugRequestService: DrugRequestService) {}

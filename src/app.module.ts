@@ -17,6 +17,8 @@ import { DrugOrderModule } from './drug-order/drug-order.module';
 import { ReportModule } from './report/report.module';
 import { DraftOrderModule } from './draft-order/draft-order.module';
 import { DraftOrder } from 'draft-order/entities/draft-order.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { ApiKeyGuard } from 'auth/api-key.guard';
 
 @Module({
   imports: [
@@ -44,10 +46,16 @@ import { DraftOrder } from 'draft-order/entities/draft-order.entity';
     TelegramModule,
     DrugOrderModule,
     ReportModule,
-    DraftOrderModule
+    DraftOrderModule,
   ],
   controllers: [],
-  providers: [TelegramService],
+  providers: [
+    TelegramService,
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard, // <--- Теперь весь сервер закрыт API ключом
+    },
+  ],
 })
 export class AppModule {}
 
