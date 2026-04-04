@@ -26,13 +26,12 @@ import { DraftOrder } from 'draft-order/entities/draft-order.entity';
       serveRoot: '/uploads',
     }),
     TypeOrmModule.forRootAsync({
-      // @ts-ignore
       useFactory: () => ({
         type: 'mysql',
-        host: 'shortline.proxy.rlwy.net',
-        port: 27621,
+        host: 'hopper.proxy.rlwy.net',
+        port: 41865,
         username: 'root',
-        password: 'VNPFvwTxiyzvTVWAInaSFKGGiHgZOGBl',
+        password: 'MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft',
         database: 'railway',
         entities: [Drug, DrugArrival, DrugRequest, Department, DraftOrder],
         synchronize: true,
