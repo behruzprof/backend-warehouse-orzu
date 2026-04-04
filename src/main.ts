@@ -7,7 +7,7 @@ async function bootstrap() {
 
   // Updated CORS configuration
   app.enableCors({
-    origin: 'http://localhost:5173', // Explicitly allow your frontend URL
+    origin: 'https://pas.orzumedical.uz', // Explicitly allow your frontend URL
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // Allow cookies and authorization headers
     allowedHeaders: 'Content-Type, Accept, Authorization',
