@@ -5,11 +5,15 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Updated CORS configuration
   app.enableCors({
-    origin: '*',
+    origin: 'http://localhost:5173', // Explicitly allow your frontend URL
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true, // Allow cookies and authorization headers
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
-  const PORT = process.env.PORT as string;
+  const PORT = process.env.PORT || 3001;
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -20,7 +24,7 @@ async function bootstrap() {
   );
 
   await app.listen(PORT, () => {
-    Logger.log(`SERVER STARTED ON 5000`);
+    Logger.log(`SERVER STARTED ON ${PORT}`);
   });
 }
 bootstrap();

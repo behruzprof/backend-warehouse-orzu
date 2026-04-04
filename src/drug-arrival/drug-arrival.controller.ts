@@ -87,7 +87,6 @@ export class DrugArrivalController {
     return this.drugArrivalService.sumByPaymentType(startDate, endDate);
   }
 
-  // Детализированный отчёт по типам оплаты за период
   @Get('report/detailed-by-payment-type')
   getDetailedReportByPaymentType(
     @Query('start') start: string,
@@ -114,7 +113,6 @@ export class DrugArrivalController {
     const startDate = new Date(start);
     const endDate = new Date(end);
 
-    // Проверка валидности дат
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
     }
@@ -172,13 +170,12 @@ export class DrugArrivalController {
     return this.drugArrivalService.sumAndCountByPaymentType(startDate, endDate);
   }
 
-  // Получить приходы по конкретному препарату
+  // 🔄 УБРАЛИ ParseIntPipe, так как drugId теперь может быть UUID строкой
   @Get('by-drug/:drugId')
-  async getArrivalsByDrug(@Param('drugId', ParseIntPipe) drugId: number) {
+  async getArrivalsByDrug(@Param('drugId') drugId: string | number) {
     return this.drugArrivalService.arrivalsByDrug(drugId);
   }
 
-  // Получить ежедневную статистику по приходу за период
   @Get('report/daily-stats')
   async getDailyStats(
     @Query('start') start: string,

@@ -6,54 +6,72 @@ import {
   IsInt,
   Min,
   IsIn,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateDrugDto {
   @IsString()
-  name: string; // Название лекарства (обязательно)
+  name: string;
 
   @IsInt()
   @Min(0)
-  quantity: number; // Количество в наличии (обязательно)
+  quantity: number;
+
+  @IsOptional()
+  @IsString()
+  unit?: string; // ml, g, pcs
 
   @IsInt()
   @Min(0)
-  minStock: number; // Минимальный запас (обязательно)
+  minStock: number;
 
   @IsInt()
   @Min(0)
-  maxStock: number; // Максимальный запас (обязательно)
+  maxStock: number;
 
   @IsString()
-  supplier: string; // Название поставщика (обязательно)
+  supplier: string;
 
+  // 🆕 ДОБАВЛЕНО: Стандарт
+  @IsOptional()
+  @IsBoolean()
+  IsStandard?: boolean;
+
+  // 🆕 ДОБАВЛЕНО: Цена за единицу
   @IsNumber()
   @Min(0)
-  purchaseAmount: number; // Сумма закупки (обязательно)
+  costPerPiece: number;
+
+  // 🆕 ДОБАВЛЕНО: Единица (штуки)
+  @IsInt()
+  @Min(0)
+  piece: number;
+
+  // ❌ УДАЛЕНО: purchaseAmount (будет вычисляться на бэкенде)
 
   @IsDateString()
-  expiryDate: string; // Срок годности (обязательно)
+  expiryDate: string;
 
   @IsOptional()
   @IsString()
-  shelf?: string; // Номер шкафа
+  shelf?: string;
 
   @IsOptional()
   @IsString()
-  section?: string; // Секция/полка
+  section?: string;
 
   @IsOptional()
   @IsInt()
   @Min(0)
-  row?: number; // Ряд (индекс)
+  row?: number;
 
   @IsOptional()
   @IsString()
-  category?: string; // Категория (например, "антибиотик")
+  category?: string;
 
   @IsOptional()
   @IsDateString()
-  arrivalDate?: string; // Дата последнего прихода
+  arrivalDate?: string;
 
   @IsIn(['НДС', 'КОРПОРАТИВ КАРТА', 'НАКТ'])
   paymentType: string;

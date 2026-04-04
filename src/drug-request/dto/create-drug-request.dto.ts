@@ -5,7 +5,7 @@ export class CreateDrugRequestDto {
   departmentId: number;
 
   @IsInt()
-  drugId: number;
+  drugId: string | number;
 
   @IsInt()
   @Min(1)

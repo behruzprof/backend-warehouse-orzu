@@ -50,7 +50,7 @@ export class DrugRequestController {
   }
 
   @Get('report/by-drug/:drugId')
-  getReportByDrug(@Param('drugId', ParseIntPipe) drugId: number) {
+  getReportByDrug(@Param('drugId') drugId: string | number) { // Убрал ParseIntPipe на случай UUID
     return this.drugRequestService.getReportByDrug(drugId);
   }
 

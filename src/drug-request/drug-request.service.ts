@@ -10,6 +10,7 @@ import { CreateDrugRequestDto } from './dto/create-drug-request.dto';
 import { Drug } from 'drug/entities/drug.entity';
 import { Department } from 'department/entities/department.entity';
 import { TelegramService } from 'telegram/telegram.service';
+import { TEMPLATE_COMPONENTS } from 'drug/template';
 
 @Injectable()
 export class DrugRequestService {
@@ -33,59 +34,67 @@ export class DrugRequestService {
     for (const dto of createDtoList) {
       const { departmentId, drugId, quantity } = dto;
 
-      const department = await this.departmentRepo.findOneBy({
-        id: departmentId,
-      });
+      const department = await this.departmentRepo.findOneBy({ id: departmentId });
       if (!department) throw new NotFoundException('Bo‘lim topilmadi');
 
-      const drug = await this.drugRepo.findOneBy({ id: drugId });
-      if (!drug) throw new NotFoundException('Dori topilmadi');
+      const requestedDrug = await this.drugRepo.findOneBy({ id: drugId as any });
+      if (!requestedDrug) throw new NotFoundException('Dori topilmadi');
 
-      if (drug.quantity < quantity) {
-        throw new BadRequestException(
-          `Omborda yetarli ${drug.name} mavjud emas`,
-        );
-      }
+      const templateMap = TEMPLATE_COMPONENTS[String(drugId)];
 
-      drug.quantity -= quantity;
-      await this.drugRepo.save(drug);
+      if (templateMap) {
+        // ✅ ЛОГИКА ДЛЯ ШАБЛОНА
+        const drugsToUpdate: Drug[] = [];
 
-      let drugRequest = this.drugRequestRepo.create({
-        department,
-        drug,
-        quantity,
-      });
+        for (const comp of templateMap) {
+          const actualDrug = await this.drugRepo.findOneBy({ id: comp.id as any });
+          if (!actualDrug) throw new NotFoundException(`Komponent topilmadi (ID: ${comp.id})`);
 
-      if (
-        department.name === 'НОЧ_МУОЛАЖА_ШАХБОЗ' ||
-        department.name === 'НОЧ_МУОЛАЖА_ШОХСАНАМ' ||
-        department.name === 'НОЧ_МУОЛАЖА_БУНЁД' ||
-        department.name === 'НОЧ_МУОЛАЖА_НАРГИЗА' ||
-        department.name === 'НОЧ_МУОЛАЖА_АКМАРАЛ' ||
-        department.name === 'НОЧ_МУОЛАЖА_ЖАНАР' ||
-        department.name === 'НОЧ_МУОЛАЖА_САБОХАТ' ||
-        department.name === 'НОЧ_МУОЛАЖА_FERUZA'
-      ) {
-        const now = new Date();
-        const localTime = new Date(
-          now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }),
-        );
-        const hour = localTime.getHours();
-
-        if (hour >= 0 && hour < 11) {
-          const adjustedDate = new Date(localTime);
-          adjustedDate.setDate(adjustedDate.getDate() - 1);
-          adjustedDate.setHours(0, 0, 0, 0);
-          drugRequest.createdAt = adjustedDate;
+          const neededQty = comp.qty * quantity;
+          if (actualDrug.quantity < neededQty) {
+            throw new BadRequestException(
+              `Omborda yetarli komponent "${actualDrug.name}" mavjud emas. (Kerak: ${neededQty}, Qolgan: ${actualDrug.quantity})`,
+            );
+          }
+          
+          actualDrug.quantity -= neededQty;
+          drugsToUpdate.push(actualDrug);
         }
+
+        await this.drugRepo.save(drugsToUpdate);
+
+        let drugRequest = this.drugRequestRepo.create({
+          department,
+          drug: requestedDrug,
+          quantity,
+        });
+
+        this.applyNightShiftTimeLogic(department.name, drugRequest);
+        await this.drugRequestRepo.save(drugRequest);
+
+        createdRequests.push(drugRequest);
+        messages.push(`💊 To'plam: ${requestedDrug.name}\n 🔢 Miqdor: ${quantity}`);
+      } else {
+        // ❌ ЛОГИКА ДЛЯ ОБЫЧНОГО ЛЕКАРСТВА
+        if (requestedDrug.quantity < quantity) {
+          throw new BadRequestException(`Omborda yetarli ${requestedDrug.name} mavjud emas`);
+        }
+
+        requestedDrug.quantity -= quantity;
+        await this.drugRepo.save(requestedDrug);
+
+        let drugRequest = this.drugRequestRepo.create({
+          department,
+          drug: requestedDrug,
+          quantity,
+        });
+
+        this.applyNightShiftTimeLogic(department.name, drugRequest);
+        await this.drugRequestRepo.save(drugRequest);
+
+        createdRequests.push(drugRequest);
+        messages.push(`💊 Dori: ${requestedDrug.name}\n 🔢Miqdor: ${quantity}\n📦 Qolgan: ${requestedDrug.quantity}`);
       }
-
-      await this.drugRequestRepo.save(drugRequest);
-
-      createdRequests.push(drugRequest);
-      messages.push(
-        `💊 Dori: ${drug.name}\n 🔢Miqdor: ${quantity}\n📦 Qolgan: ${drug.quantity}`,
-      );
     }
 
     if (messages.length) {
@@ -98,10 +107,7 @@ export class DrugRequestService {
     return createdRequests;
   }
 
-  async update(
-    id: number,
-    updateDto: Partial<CreateDrugRequestDto>,
-  ): Promise<DrugRequest> {
+  async update(id: number, updateDto: Partial<CreateDrugRequestDto>): Promise<DrugRequest> {
     const existingRequest = await this.drugRequestRepo.findOne({
       where: { id },
       relations: ['drug', 'department'],
@@ -112,62 +118,67 @@ export class DrugRequestService {
     }
 
     const originalQuantity = existingRequest.quantity;
+    const oldDrugId = existingRequest.drug.id;
 
-    // Обновление department
-    if (
-      updateDto.departmentId &&
-      updateDto.departmentId !== existingRequest.department.id
-    ) {
-      const newDepartment = await this.departmentRepo.findOneBy({
-        id: updateDto.departmentId,
-      });
+    if (updateDto.departmentId && updateDto.departmentId !== existingRequest.department.id) {
+      const newDepartment = await this.departmentRepo.findOneBy({ id: updateDto.departmentId });
       if (!newDepartment) throw new NotFoundException('Yangi bo‘lim topilmadi');
       existingRequest.department = newDepartment;
     }
 
-    // Обновление drug
-    if (updateDto.drugId && updateDto.drugId !== existingRequest.drug.id) {
-      const newDrug = await this.drugRepo.findOneBy({ id: updateDto.drugId });
+    const newDrugId = updateDto.drugId ?? oldDrugId;
+    const newQty = updateDto.quantity ?? originalQuantity;
+
+    if (newDrugId !== oldDrugId || newQty !== originalQuantity) {
+      
+      // 1. ВОЗВРАТ СТАРОГО
+      const oldTemplateMap = TEMPLATE_COMPONENTS[String(oldDrugId)];
+      if (oldTemplateMap) {
+        for (const comp of oldTemplateMap) {
+          const actualDrug = await this.drugRepo.findOneBy({ id: comp.id as any });
+          if (actualDrug) {
+            actualDrug.quantity += comp.qty * originalQuantity;
+            await this.drugRepo.save(actualDrug);
+          }
+        }
+      } else {
+        existingRequest.drug.quantity += originalQuantity;
+        await this.drugRepo.save(existingRequest.drug);
+      }
+
+      // 2. СПИСАНИЕ НОВОГО
+      const newDrug = await this.drugRepo.findOneBy({ id: newDrugId as any });
       if (!newDrug) throw new NotFoundException('Yangi dori topilmadi');
 
-      // Вернуть количество старому препарату
-      existingRequest.drug.quantity += originalQuantity;
-      await this.drugRepo.save(existingRequest.drug);
+      const newTemplateMap = TEMPLATE_COMPONENTS[String(newDrugId)];
+      if (newTemplateMap) {
+        for (const comp of newTemplateMap) {
+          const actualDrug = await this.drugRepo.findOneBy({ id: comp.id as any });
+          if (!actualDrug) throw new NotFoundException(`Komponent topilmadi (ID: ${comp.id})`);
 
-      // Снять с нового препарата
-      if (newDrug.quantity < (updateDto.quantity ?? originalQuantity)) {
-        throw new BadRequestException(
-          `Omborda yetarli ${newDrug.name} mavjud emas`,
-        );
+          const neededQty = comp.qty * newQty;
+          if (actualDrug.quantity < neededQty) {
+             throw new BadRequestException(`Omborda yetarli komponent "${actualDrug.name}" mavjud emas`);
+          }
+          actualDrug.quantity -= neededQty;
+          await this.drugRepo.save(actualDrug);
+        }
+      } else {
+        if (newDrug.quantity < newQty) {
+          throw new BadRequestException(`Omborda yetarli ${newDrug.name} mavjud emas`);
+        }
+        newDrug.quantity -= newQty;
+        await this.drugRepo.save(newDrug);
       }
-
-      newDrug.quantity -= updateDto.quantity ?? originalQuantity;
-      await this.drugRepo.save(newDrug);
 
       existingRequest.drug = newDrug;
-      existingRequest.quantity = updateDto.quantity ?? originalQuantity;
-    } else if (
-      updateDto.quantity !== undefined &&
-      updateDto.quantity !== originalQuantity
-    ) {
-      const delta = updateDto.quantity - originalQuantity;
-
-      if (existingRequest.drug.quantity < delta) {
-        throw new BadRequestException(
-          `Omborda yetarli ${existingRequest.drug.name} mavjud emas`,
-        );
-      }
-
-      existingRequest.drug.quantity -= delta;
-      await this.drugRepo.save(existingRequest.drug);
-
-      existingRequest.quantity = updateDto.quantity;
+      existingRequest.quantity = newQty;
     }
 
     const updated = await this.drugRequestRepo.save(existingRequest);
 
     await this.telegramService.sendMessage(
-      `🟡 [✏️ Talabnoma yangilandi]\n💊 Dori: ${updated.drug.name}\n🏥 Bo‘lim: ${updated.department.name}\n✏️ Miqdor: ${updated.quantity}\n📦 Qolgan: ${updated.drug.quantity}`,
+      `🟡 [✏️ Talabnoma yangilandi]\n💊 Dori/To'plam: ${updated.drug.name}\n🏥 Bo‘lim: ${updated.department.name}\n✏️ Miqdor: ${updated.quantity}`,
       { isPrivate: true },
     );
 
@@ -193,16 +204,51 @@ export class DrugRequestService {
 
     if (!drugRequest) throw new NotFoundException('Talabnoma topilmadi');
 
-    drugRequest.drug.quantity += drugRequest.quantity;
-    await this.drugRepo.save(drugRequest.drug);
+    const templateMap = TEMPLATE_COMPONENTS[String(drugRequest.drug.id)];
+    if (templateMap) {
+      for (const comp of templateMap) {
+        const actualDrug = await this.drugRepo.findOneBy({ id: comp.id as any });
+        if (actualDrug) {
+          actualDrug.quantity += comp.qty * drugRequest.quantity;
+          await this.drugRepo.save(actualDrug);
+        }
+      }
+    } else {
+      drugRequest.drug.quantity += drugRequest.quantity;
+      await this.drugRepo.save(drugRequest.drug);
+    }
+    
     await this.drugRequestRepo.delete(id);
 
     await this.telegramService.sendMessage(
-      `🔴 [❌ Talabnoma o‘chirildi]\n💊 Dori: ${drugRequest.drug.name}\n🏥 Bo‘lim: ${drugRequest.department.name}\n🗑 Miqdor: ${drugRequest.quantity}\n📦 Qolgan: ${drugRequest.drug.quantity}`,
+      `🔴 [❌ Talabnoma o‘chirildi]\n💊 Dori/To'plam: ${drugRequest.drug.name}\n🏥 Bo‘lim: ${drugRequest.department.name}\n🗑 Miqdor: ${drugRequest.quantity}`,
       { isPrivate: true },
     );
   }
 
+  // --- Helpers ---
+  private applyNightShiftTimeLogic(departmentName: string, drugRequest: DrugRequest) {
+    const nightShifts = [
+      'НОЧ_МУОЛАЖА_ШАХБОЗ', 'НОЧ_МУОЛАЖА_ШОХСАНАМ', 'НОЧ_МУОЛАЖА_БУНЁД',
+      'НОЧ_МУОЛАЖА_НАРГИЗА', 'НОЧ_МУОЛАЖА_АКМАРАЛ', 'НОЧ_МУОЛАЖА_ЖАНАР',
+      'НОЧ_МУОЛАЖА_САБОХАТ', 'НОЧ_МУОЛАЖА_FERUZA'
+    ];
+
+    if (nightShifts.includes(departmentName)) {
+      const now = new Date();
+      const localTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+      const hour = localTime.getHours();
+
+      if (hour >= 0 && hour < 11) {
+        const adjustedDate = new Date(localTime);
+        adjustedDate.setDate(adjustedDate.getDate() - 1);
+        adjustedDate.setHours(0, 0, 0, 0);
+        drugRequest.createdAt = adjustedDate;
+      }
+    }
+  }
+
+  // --- Reports ---
   async getReportByDepartment() {
     return this.drugRequestRepo
       .createQueryBuilder('request')
@@ -215,7 +261,7 @@ export class DrugRequestService {
       .getRawMany();
   }
 
-  async getReportByDrug(drugId: number) {
+  async getReportByDrug(drugId: string | number) {
     return this.drugRequestRepo
       .createQueryBuilder('request')
       .select('d.name', 'department')

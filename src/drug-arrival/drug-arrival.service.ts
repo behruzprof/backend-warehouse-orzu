@@ -17,19 +17,21 @@ export class DrugArrivalService {
     private readonly drugRepository: Repository<Drug>,
   ) {}
 
-  // Добавление прихода и обновление количества
+  // ✅ Добавление прихода и обновление количества
   async create(createDto: CreateDrugArrivalDto): Promise<DrugArrival> {
-    // Найти лекарство по id
     const drug = await this.drugRepository.findOne({
-      where: { id: createDto.drugId },
+      where: { id: createDto.drugId as any },
     });
+    
     if (!drug) {
       throw new NotFoundException('Drug not found');
     }
 
-    // Создать новую запись прихода
+    // Создаем запись прихода с новыми полями
     const arrival = this.drugArrivalRepository.create({
       drug,
+      piece: createDto.piece,               // 🆕 Добавлено
+      costPerPiece: createDto.costPerPiece, // 🆕 Добавлено
       quantity: createDto.quantity,
       purchaseAmount: createDto.purchaseAmount,
       arrivalDate: createDto.arrivalDate,
@@ -38,25 +40,24 @@ export class DrugArrivalService {
       paymentType: createDto.paymentType,
     });
 
-    // Сохраняем приход
     const savedArrival = await this.drugArrivalRepository.save(arrival);
 
-    // Обновляем общее количество в лекарстве
+    // 🔄 ОБНОВЛЯЕМ главную карточку лекарства последними данными
     drug.quantity += createDto.quantity;
-    drug.purchaseAmount = createDto.purchaseAmount;
-    // Обновляем цену закупки
-    drug.expiryDate = new Date(createDto.expiryDate); // Обновляем срок годности
+    drug.piece = createDto.piece;                 // Обновляем кол-во последней закупки
+    drug.costPerPiece = createDto.costPerPiece;   // Обновляем актуальную цену за единицу
+    drug.purchaseAmount = createDto.purchaseAmount; // Обновляем общую сумму
+    drug.expiryDate = new Date(createDto.expiryDate); 
+    
     await this.drugRepository.save(drug);
 
     return savedArrival;
   }
 
-  // Получить все приходы (опционально с фильтрами)
   findAll(): Promise<DrugArrival[]> {
     return this.drugArrivalRepository.find({ relations: ['drug'] });
   }
 
-  // Найти приход по id
   findOne(id: number): Promise<DrugArrival | null> {
     return this.drugArrivalRepository.findOne({
       where: { id },
@@ -64,7 +65,6 @@ export class DrugArrivalService {
     });
   }
 
-  // Обновить приход (например, изменить количество или дату)
   async update(
     id: number,
     updateDto: UpdateDrugArrivalDto,
@@ -77,7 +77,6 @@ export class DrugArrivalService {
       throw new NotFoundException('DrugArrival not found');
     }
 
-    // Если меняется количество, обновим остаток в Drug
     if (
       updateDto.quantity !== undefined &&
       updateDto.quantity !== arrival.quantity
@@ -91,7 +90,6 @@ export class DrugArrivalService {
     return this.drugArrivalRepository.save(arrival);
   }
 
-  // Удалить приход
   async remove(id: number): Promise<void> {
     const arrival = await this.drugArrivalRepository.findOne({
       where: { id },
@@ -101,7 +99,6 @@ export class DrugArrivalService {
       throw new NotFoundException('DrugArrival not found');
     }
 
-    // Уменьшаем общее количество в Drug
     arrival.drug.quantity -= arrival.quantity;
     if (arrival.drug.quantity < 0) arrival.drug.quantity = 0;
     await this.drugRepository.save(arrival.drug);
@@ -109,7 +106,6 @@ export class DrugArrivalService {
     await this.drugArrivalRepository.remove(arrival);
   }
 
-  // Отчёт: приходы за период
   async arrivalsByPeriod(
     startDate: Date,
     endDate: Date,
@@ -122,7 +118,6 @@ export class DrugArrivalService {
     });
   }
 
-  // Отчёт: суммы по поставщикам за период
   async sumBySupplier(
     startDate: Date,
     endDate: Date,
@@ -138,14 +133,12 @@ export class DrugArrivalService {
       .groupBy('arrival.supplier')
       .getRawMany();
 
-    // totalAmount приходит строкой, преобразуем в число
     return result.map((r) => ({
       supplier: r.supplier,
       totalAmount: parseFloat(r.totalAmount),
     }));
   }
 
-  // Отчёт: остатки по срокам годности (например, партии, срок годности которых скоро истекает)
   async expiringSoon(daysAhead: number): Promise<DrugArrival[]> {
     const now = new Date();
     const limitDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
@@ -212,7 +205,6 @@ export class DrugArrivalService {
     const averagePurchasePrice =
       totalQuantity > 0 ? Number((totalAmount / totalQuantity).toFixed(2)) : 0;
 
-    // Остатки на складе по каждому препарату
     const allDrugs = await this.drugRepository.find();
     const stockByDrug = allDrugs.map((drug) => ({
       drugName: drug.name,
@@ -233,9 +225,9 @@ export class DrugArrivalService {
     };
   }
 
-  async arrivalsByDrug(drugId: number): Promise<DrugArrival[]> {
+  async arrivalsByDrug(drugId: string | number): Promise<DrugArrival[]> {
     return this.drugArrivalRepository.find({
-      where: { drug: { id: drugId } },
+      where: { drug: { id: drugId as any } },
       relations: ['drug'],
       order: { arrivalDate: 'DESC' },
     });
@@ -263,7 +255,6 @@ export class DrugArrivalService {
     }));
   }
 
-  // Отчёт: суммы и количество по типам оплаты за период
   async sumAndCountByPaymentType(
     startDate: Date,
     endDate: Date,
@@ -296,7 +287,6 @@ export class DrugArrivalService {
     }));
   }
 
-  // Отчёт: приходы по типу оплаты за период с детализацией
   async arrivalsByPaymentType(
     paymentType: string,
     startDate: Date,
@@ -312,7 +302,6 @@ export class DrugArrivalService {
     });
   }
 
-  // Остатки по срокам годности с группировкой по типу оплаты
   async expiringSoonGroupedByPaymentType(daysAhead: number): Promise<
     {
       paymentType: string;
@@ -322,7 +311,6 @@ export class DrugArrivalService {
     const now = new Date();
     const limitDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
-    // Сначала берем все партии с истекающим сроком
     const arrivals = await this.drugArrivalRepository.find({
       where: {
         expiryDate: LessThanOrEqual(limitDate),
@@ -331,7 +319,6 @@ export class DrugArrivalService {
       order: { expiryDate: 'ASC' },
     });
 
-    // Группируем по paymentType
     const grouped = arrivals.reduce(
       (acc, arrival) => {
         if (!acc[arrival.paymentType]) acc[arrival.paymentType] = [];
@@ -347,7 +334,6 @@ export class DrugArrivalService {
     }));
   }
 
-  // Расширенный отчёт по приходу с разбивкой по типам оплаты и поставщикам
   async detailedArrivalsReport(
     startDate: Date,
     endDate: Date,
@@ -395,7 +381,6 @@ export class DrugArrivalService {
       totalQuantity += arrival.quantity;
       totalAmount += Number(arrival.purchaseAmount);
 
-      // По поставщикам
       if (!suppliersMap.has(arrival.supplier)) {
         suppliersMap.set(arrival.supplier, {
           totalAmount: 0,
@@ -406,7 +391,6 @@ export class DrugArrivalService {
       supData.totalAmount += Number(arrival.purchaseAmount);
       supData.totalQuantity += arrival.quantity;
 
-      // По типам оплаты
       if (!paymentTypeMap.has(arrival.paymentType)) {
         paymentTypeMap.set(arrival.paymentType, {
           totalAmount: 0,
@@ -424,7 +408,6 @@ export class DrugArrivalService {
     const averagePurchasePrice =
       totalQuantity > 0 ? Number((totalAmount / totalQuantity).toFixed(2)) : 0;
 
-    // Остатки по препаратам
     const allDrugs = await this.drugRepository.find();
     const stockByDrug = allDrugs.map((drug) => ({
       drugName: drug.name,
@@ -452,7 +435,6 @@ export class DrugArrivalService {
     };
   }
 
-  // Отчёт: суммы по типам оплаты за период
   async sumByPaymentType(
     startDate: Date,
     endDate: Date,
@@ -474,7 +456,6 @@ export class DrugArrivalService {
     }));
   }
 
-  // Отчёт: количество и сумма по каждому типу оплаты за период
   async detailedReportByPaymentType(
     startDate: Date,
     endDate: Date,

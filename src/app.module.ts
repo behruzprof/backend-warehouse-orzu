@@ -28,8 +28,8 @@ import { DraftOrder } from 'draft-order/entities/draft-order.entity';
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'mysql',
-        host: 'mysql.railway.internal',
-        port: 3306,
+        host: 'hopper.proxy.rlwy.net',
+        port: 41865,
         username: 'root',
         password: 'MRTYBqIyYuTuPxzdnOSQTsUdXoYqPGft',
         database: 'railway',

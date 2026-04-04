@@ -41,6 +41,11 @@ export class DrugController {
     return this.drugService.findAllPaginated(page, limit, search);
   }
 
+  @Get('template')
+  getStaticTemplate() {
+    return this.drugService.getStaticTemplate();
+  }
+
   /**
    * Получить лекарства по категории
    * GET /drugs/by-category?category=Антибиотики

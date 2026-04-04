@@ -5,6 +5,7 @@ import { Drug } from './entities/drug.entity';
 import { CreateDrugDto } from './dto/create-drug.dto';
 import { UpdateDrugDto } from './dto/update-drug.dto';
 import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
+import { template } from './template';
 
 @Injectable()
 export class DrugService {
@@ -19,28 +20,45 @@ export class DrugService {
   async create(createDrugDto: CreateDrugDto): Promise<Drug> {
     const {
       name, quantity, minStock, maxStock, supplier,
-      purchaseAmount, expiryDate, arrivalDate, paymentType, ...optionalFields
+      expiryDate, arrivalDate, paymentType, 
+      IsStandard, costPerPiece, piece, ...optionalFields // Извлекли новые поля
     } = createDrugDto;
 
+    // 🧮 АВТОВЫЧИСЛЕНИЕ: сумма = штук * цена за штуку
+    const calculatedPurchaseAmount = piece * costPerPiece;
+
     const drug = this.drugRepository.create({
-      name, quantity, minStock, maxStock, supplier, purchaseAmount,
+      name, 
+      quantity, 
+      minStock, 
+      maxStock, 
+      supplier, 
+      purchaseAmount: calculatedPurchaseAmount, // Записываем вычисленную сумму
+      IsStandard: IsStandard ?? false,          // Значение по умолчанию false
+      costPerPiece,
+      piece,
       expiryDate: new Date(expiryDate),
       arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
       ...optionalFields,
     });
+    
     const savedDrug = await this.drugRepository.save(drug);
 
     const drugArrival = this.drugArrivalRepository.create({
       drug: savedDrug,
       arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
-      expiryDate: new Date(expiryDate), quantity, purchaseAmount, supplier, paymentType,
+      expiryDate: new Date(expiryDate), 
+      quantity, 
+      purchaseAmount: calculatedPurchaseAmount, // Передаем вычисленную сумму в приход
+      supplier, 
+      paymentType,
     });
     await this.drugArrivalRepository.save(drugArrival);
 
     return savedDrug;
   }
 
-  // ⏪ СТАРЫЙ МЕТОД: Получить все лекарства (без пагинации, как было раньше)
+  // ⏪ СТАРЫЙ МЕТОД: Получить все лекарства (без пагинации)
   async findAll(): Promise<Drug[]> {
     return await this.drugRepository.find();
   }
@@ -67,6 +85,10 @@ export class DrugService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  getStaticTemplate() {
+    return template;
   }
 
   // 🆕 НОВЫЙ МЕТОД: Получение лекарств по массиву ID
@@ -99,6 +121,14 @@ export class DrugService {
   // ✅ Обновление информации о лекарстве
   async update(id: number, updateDrugDto: UpdateDrugDto): Promise<Drug> {
     const drug = await this.findOne(id);
+    
+    // Если при апдейте передают piece и costPerPiece, мы тоже должны пересчитать сумму
+    if (updateDrugDto.piece !== undefined || updateDrugDto.costPerPiece !== undefined) {
+      const newPiece = updateDrugDto.piece ?? drug.piece;
+      const newCost = updateDrugDto.costPerPiece ?? drug.costPerPiece;
+      drug.purchaseAmount = newPiece * newCost;
+    }
+
     const updated = Object.assign(drug, updateDrugDto);
     return await this.drugRepository.save(updated);
   }
