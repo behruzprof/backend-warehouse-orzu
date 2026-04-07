@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository, In, FindOptionsWhere } from 'typeorm';
-import { Drug } from './entities/drug.entity';
+import { Drug, DrugCategory } from './entities/drug.entity'; // 🆕 ДОБАВЛЕН ИМПОРТ DrugCategory
 import { CreateDrugDto } from './dto/create-drug.dto';
 import { UpdateDrugDto } from './dto/update-drug.dto';
 import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
@@ -21,7 +21,7 @@ export class DrugService {
     const {
       name, quantity, minStock, maxStock, supplier,
       expiryDate, arrivalDate, paymentType, 
-      IsStandard, costPerPiece, piece, ...optionalFields // Извлекли новые поля
+      IsStandard, costPerPiece, piece, ...optionalFields
     } = createDrugDto;
 
     // 🧮 АВТОВЫЧИСЛЕНИЕ: сумма = штук * цена за штуку
@@ -33,8 +33,8 @@ export class DrugService {
       minStock, 
       maxStock, 
       supplier, 
-      purchaseAmount: calculatedPurchaseAmount, // Записываем вычисленную сумму
-      IsStandard: IsStandard ?? false,          // Значение по умолчанию false
+      purchaseAmount: calculatedPurchaseAmount, 
+      IsStandard: IsStandard ?? false,          
       costPerPiece,
       piece,
       expiryDate: new Date(expiryDate),
@@ -49,7 +49,7 @@ export class DrugService {
       arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
       expiryDate: new Date(expiryDate), 
       quantity, 
-      purchaseAmount: calculatedPurchaseAmount, // Передаем вычисленную сумму в приход
+      purchaseAmount: calculatedPurchaseAmount, 
       supplier, 
       paymentType,
     });
@@ -111,8 +111,8 @@ export class DrugService {
     return drug;
   }
 
-  // ✅ Получить по точной категории
-  async findByExactCategory(category: string): Promise<Drug[]> {
+  // ✅ ИЗМЕНЕНО: Теперь принимаем DrugCategory вместо string
+  async findByExactCategory(category: DrugCategory): Promise<Drug[]> {
     return this.drugRepository.find({
       where: { category },
     });

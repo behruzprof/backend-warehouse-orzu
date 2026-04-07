@@ -7,19 +7,25 @@ import {
   Min,
   IsIn,
   IsBoolean,
+  IsEnum, // 🆕 ДОБАВЛЕНО: Импортируем валидатор для Enum
 } from 'class-validator';
+import { DrugCategory } from '../entities/drug.entity'; // 🆕 ДОБАВЛЕНО: Импортируем сам Enum
 
 export class CreateDrugDto {
   @IsString()
   name: string;
 
-  @IsInt()
+  // ✅ ИСПРАВЛЕНО: Заменили IsInt на IsNumber, чтобы API пропускало значения вроде 0.5
+  @IsNumber()
   @Min(0)
   quantity: number;
 
   @IsOptional()
   @IsString()
-  unit?: string; // ml, g, pcs
+  @IsIn(['ml', 'g', 'pcs'], {
+    message: 'Единица измерения (unit) должна быть ml, g или pcs',
+  }) 
+  unit?: string;
 
   @IsInt()
   @Min(0)
@@ -32,22 +38,18 @@ export class CreateDrugDto {
   @IsString()
   supplier: string;
 
-  // 🆕 ДОБАВЛЕНО: Стандарт
   @IsOptional()
   @IsBoolean()
   IsStandard?: boolean;
 
-  // 🆕 ДОБАВЛЕНО: Цена за единицу
   @IsNumber()
   @Min(0)
   costPerPiece: number;
 
-  // 🆕 ДОБАВЛЕНО: Единица (штуки)
-  @IsInt()
+  // ✅ ИСПРАВЛЕНО: Заменили IsInt на IsNumber, чтобы можно было приходовать 0.5 упаковки
+  @IsNumber()
   @Min(0)
   piece: number;
-
-  // ❌ УДАЛЕНО: purchaseAmount (будет вычисляться на бэкенде)
 
   @IsDateString()
   expiryDate: string;
@@ -65,9 +67,12 @@ export class CreateDrugDto {
   @Min(0)
   row?: number;
 
+  // ✅ ИЗМЕНЕНО: Строгая валидация по нашему списку категорий
   @IsOptional()
-  @IsString()
-  category?: string;
+  @IsEnum(DrugCategory, {
+    message: 'Категория должна быть из допустимого списка',
+  })
+  category?: DrugCategory;
 
   @IsOptional()
   @IsDateString()

@@ -2,47 +2,53 @@ import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
 import { DrugRequest } from 'drug-request/entities/drug-request.entity';
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
+// 🆕 ДОБАВЛЕНО: Строгий список категорий. 
+// Вы можете поменять эти названия на те, которые используются в вашей клинике/аптеке.
+export enum DrugCategory {
+  ANTIBIOTICS = 'Таблетки', // Антибиотики
+  ANALGESICS = 'Растворы', // Обезболивающие
+  VACCINES = 'Капельницы', // Вакцины
+  INJECTIONS = 'Инъекции', // Инъекции
+  OTHER = 'Бошқалар', // Другое
+}
+
 @Entity('drugs')
 export class Drug {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  name: string; // Название лекарства
+  name: string;
 
-  @Column({ type: 'varchar', default: 'pcs' }) // ml, g, pcs
+  @Column({ type: 'varchar', default: 'pcs' }) 
   unit: string;
 
-  @Column('int', { default: 0 })
-  quantity: number; // Количество в наличии
+  @Column('decimal', { precision: 10, scale: 2 })
+  quantity: number; 
 
   @Column('int', { default: 0 })
-  minStock: number; // Минимальный запас
+  minStock: number; 
 
   @Column('int', { default: 0 })
-  maxStock: number; // Максимальный запас
+  maxStock: number; 
 
   @Column()
-  supplier: string; // Поставщик
+  supplier: string; 
 
-  // 🆕 ДОБАВЛЕНО: Добавлять ли в сделку при создании
   @Column({ default: false })
   IsStandard: boolean;
 
-  // 🆕 ДОБАВЛЕНО: Цена за единицу (штуку)
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   costPerPiece: number;
 
-  // 🆕 ДОБАВЛЕНО: Единица (количество штук прихода)
-  @Column('int', { default: 0 })
+  @Column('decimal', { default: 0 })
   piece: number;
 
-  // ОСТАВЛЕНО, но вычисляется автоматически: Сумма закупки (piece * costPerPiece)
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   purchaseAmount: number;
 
   @Column({ type: 'date', nullable: false })
-  expiryDate: Date; // Срок годности
+  expiryDate: Date; 
 
   @Column({ nullable: true })
   shelf: string;
@@ -53,8 +59,9 @@ export class Drug {
   @Column('int', { nullable: true })
   row: number;
 
-  @Column({ nullable: true })
-  category: string;
+  // ✅ ИЗМЕНЕНО: Теперь это строгий Enum
+  @Column({ type: 'enum', enum: DrugCategory, nullable: true })
+  category: DrugCategory;
 
   @Column({ type: 'date', nullable: true })
   arrivalDate: Date;

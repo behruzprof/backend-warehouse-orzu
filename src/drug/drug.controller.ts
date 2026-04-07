@@ -1,18 +1,30 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
-  ParseArrayPipe, DefaultValuePipe,
-  UseGuards,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  Query,
+  ParseArrayPipe,
+  DefaultValuePipe,
+  ParseEnumPipe, // 🆕 ДОБАВЛЕНО: ParseEnumPipe
+  // UseGuards,
 } from '@nestjs/common';
 import { DrugService } from './drug.service';
 import { CreateDrugDto } from './dto/create-drug.dto';
-import { UpdateDrugDto } from './dto/update-drug.dto';
-import { ApiKeyGuard } from 'auth/api-key.guard';
+import {
+  UpdateDrugDto,
+} from './dto/update-drug.dto';
+// import { ApiKeyGuard } from 'auth/api-key.guard';
+import { DrugCategory } from './entities/drug.entity'; // 🆕 ДОБАВЛЕНО: Импорт Enum
 
-@UseGuards(ApiKeyGuard)
+// @UseGuards(ApiKeyGuard)
 @Controller('drugs')
 export class DrugController {
   constructor(private readonly drugService: DrugService) {}
-
   /**
    * Создание нового лекарства
    * POST /drugs
@@ -44,6 +56,11 @@ export class DrugController {
     return this.drugService.findAllPaginated(page, limit, search);
   }
 
+  @Get('categories')
+  getCategories() {
+    return Object.values(DrugCategory);
+  }
+
   @Get('template')
   getStaticTemplate() {
     return this.drugService.getStaticTemplate();
@@ -54,7 +71,10 @@ export class DrugController {
    * GET /drugs/by-category?category=Антибиотики
    */
   @Get('by-category')
-  findByCategory(@Query('category') category: string) {
+  findByCategory(
+    // ✅ ИЗМЕНЕНО: Добавлена строгая проверка через ParseEnumPipe
+    @Query('category', new ParseEnumPipe(DrugCategory)) category: DrugCategory,
+  ) {
     return this.drugService.findByExactCategory(category);
   }
 

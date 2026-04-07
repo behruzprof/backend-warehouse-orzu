@@ -20,7 +20,7 @@ export class DrugRequest {
   @ManyToOne(() => Drug, (drug) => drug.drugRequests, { eager: true })
   drug: Drug;
 
-  @Column('int')
+  @Column('decimal', { precision: 10, scale: 2 })
   quantity: number;
 
   @CreateDateColumn()
