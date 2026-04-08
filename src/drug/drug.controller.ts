@@ -8,50 +8,41 @@ import {
   Delete,
   ParseIntPipe,
   Query,
-  ParseArrayPipe,
   DefaultValuePipe,
-  ParseEnumPipe, // 🆕 ДОБАВЛЕНО: ParseEnumPipe
-  // UseGuards,
+  ParseEnumPipe,
+  ParseBoolPipe, // 🆕 ДОБАВЛЕНО: ParseBoolPipe для обработки true/false
 } from '@nestjs/common';
 import { DrugService } from './drug.service';
 import { CreateDrugDto } from './dto/create-drug.dto';
 import { UpdateDrugDto } from './dto/update-drug.dto';
-// import { ApiKeyGuard } from 'auth/api-key.guard';
-import { DrugCategory } from './entities/drug.entity'; // 🆕 ДОБАВЛЕНО: Импорт Enum
+import { DrugCategory } from './entities/drug.entity';
 
-// @UseGuards(ApiKeyGuard)
 @Controller('drugs')
 export class DrugController {
   constructor(private readonly drugService: DrugService) {}
-  /**
-   * Создание нового лекарства
-   * POST /drugs
-   */
+
   @Post()
   create(@Body() createDrugDto: CreateDrugDto) {
     return this.drugService.create(createDrugDto);
   }
 
-  /**
-   * ⏪ СТАРЫЙ МЕТОД: Получить все лекарства единым списком
-   * GET /drugs
-   */
   @Get()
-  findAll() {
-    return this.drugService.findAll();
+  findAll(
+    // 🆕 ДОБАВЛЕНО: фильтр для исключения шаблонов
+    @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate: boolean,
+  ) {
+    return this.drugService.findAll(excludeTemplate);
   }
 
-  /**
-   * 🆕 НОВЫЙ МЕТОД: Получить все лекарства (с пагинацией и поиском)
-   * GET /drugs/paginated?page=1&limit=10&search=Аспирин
-   */
   @Get('paginated')
   findAllPaginated(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('search') search?: string,
+    // 🆕 ДОБАВЛЕНО: фильтр
+    @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate?: boolean,
   ) {
-    return this.drugService.findAllPaginated(page, limit, search);
+    return this.drugService.findAllPaginated(page, limit, search, excludeTemplate);
   }
 
   @Get('categories')
@@ -64,62 +55,55 @@ export class DrugController {
     return this.drugService.getStaticTemplate();
   }
 
-  /**
-   * Получить лекарства по категории
-   * GET /drugs/by-category?category=Антибиотики
-   */
   @Get('by-category')
   findByCategory(
-    // ✅ ИЗМЕНЕНО: Добавлена строгая проверка через ParseEnumPipe
     @Query('category', new ParseEnumPipe(DrugCategory)) category: DrugCategory,
+    // 🆕 ДОБАВЛЕНО: фильтр
+    @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate?: boolean,
   ) {
-    return this.drugService.findByExactCategory(category);
+    return this.drugService.findByExactCategory(category, excludeTemplate);
   }
 
-  /**
-   * 🆕 НОВЫЙ МЕТОД: Получить лекарства по массиву ID
-   * GET /drugs/by-ids?ids=1,2,3
-   */
   @Get('by-ids')
-  async getByIds(@Query('ids') ids: string) {
+  async getByIds(
+    @Query('ids') ids: string,
+    // 🆕 ДОБАВЛЕНО: фильтр
+    @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate?: boolean,
+  ) {
     const idArray = ids.split(',').map(Number);
-    return this.drugService.findByIds(idArray);
+    return this.drugService.findByIds(idArray, excludeTemplate);
   }
 
-  /**
-   * Быстрый поиск для подсказок
-   * GET /drugs/search?query=пара
-   */
   @Get('search')
-  async search(@Query('query') query: string) {
+  async search(
+    @Query('query') query: string,
+    // 🆕 ДОБАВЛЕНО: фильтр
+    @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate?: boolean,
+  ) {
     if (!query || query.trim().length === 0) {
       return [];
     }
-    return this.drugService.searchByName(query.trim());
+    return this.drugService.searchByName(query.trim(), excludeTemplate);
   }
 
-  /**
-   * Полный поиск без пагинации (если нужно)
-   * GET /drugs/search/all?query=пара
-   */
   @Get('search/all')
-  async searchAll(@Query('query') query: string) {
-    return this.drugService.searchByNameAndGetAll(query.trim());
+  async searchAll(
+    @Query('query') query: string,
+    // 🆕 ДОБАВЛЕНО: фильтр
+    @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate?: boolean,
+  ) {
+    return this.drugService.searchByNameAndGetAll(query.trim(), excludeTemplate);
   }
 
-  /**
-   * Получить одно лекарство по ID
-   * GET /drugs/:id
-   */
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.drugService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    // 🆕 ДОБАВЛЕНО: фильтр
+    @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate?: boolean,
+  ) {
+    return this.drugService.findOne(id, excludeTemplate);
   }
 
-  /**
-   * Обновить информацию о лекарстве
-   * PATCH /drugs/:id
-   */
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -128,10 +112,6 @@ export class DrugController {
     return this.drugService.update(id, updateDrugDto);
   }
 
-  /**
-   * Удалить лекарство
-   * DELETE /drugs/:id
-   */
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.drugService.remove(id);

@@ -16,7 +16,6 @@ export class DrugService {
     private readonly drugArrivalRepository: Repository<DrugArrival>,
   ) {}
 
-  // 🛠 ВСПОМОГАТЕЛЬНЫЙ МЕТОД: Приводим шаблоны к нужному типу (строки в даты)
   private getFormattedTemplates(): Drug[] {
     return template.map((item) => ({
       ...item,
@@ -25,7 +24,6 @@ export class DrugService {
     })) as unknown as Drug[];
   }
 
-  // ✅ Создание нового лекарства
   async create(createDrugDto: CreateDrugDto): Promise<Drug> {
     const {
       name, quantity, minStock, maxStock, supplier,
@@ -61,17 +59,38 @@ export class DrugService {
     return savedDrug;
   }
 
-  // ✅ Получить все лекарства (без пагинации, объединяет БД и шаблоны)
-  async findAll(): Promise<Drug[]> {
+  // ✅ ИЗМЕНЕНО: Добавлен параметр excludeTemplate
+  async findAll(excludeTemplate: boolean = false): Promise<Drug[]> {
     const dbDrugs = await this.drugRepository.find();
+    if (excludeTemplate) {
+      return dbDrugs; // Возвращаем только БД
+    }
     return [...this.getFormattedTemplates(), ...dbDrugs];
   }
 
-  // ✅ Получить все лекарства (с пагинацией и поиском по БД и шаблонам)
-  async findAllPaginated(page: number, limit: number, search?: string) {
+  // ✅ ИЗМЕНЕНО: Обработка флага excludeTemplate для пагинации
+  async findAllPaginated(page: number, limit: number, search?: string, excludeTemplate: boolean = false) {
     const skip = (page - 1) * limit;
+    const where: FindOptionsWhere<Drug> = search ? { name: Like(`%${search}%`) } : {};
 
-    // 1. Ищем и фильтруем в шаблонах
+    // 🆕 ДОБАВЛЕНО: Если исключаем шаблоны, просто делаем стандартный запрос в БД
+    if (excludeTemplate) {
+      const [data, total] = await this.drugRepository.findAndCount({
+        where,
+        skip,
+        take: limit,
+        order: { id: 'DESC' },
+      });
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    }
+
+    // --- СТАРЫЙ КОД ДЛЯ СМЕШАННЫХ ДАННЫХ ---
     const formattedTemplates = this.getFormattedTemplates();
     const matchingTemplates = search
       ? formattedTemplates.filter(t => t.name.toLowerCase().includes(search.toLowerCase()))
@@ -79,27 +98,21 @@ export class DrugService {
     
     const templateCount = matchingTemplates.length;
 
-    // 2. Рассчитываем, сколько элементов брать из шаблонов, а сколько из БД
     let templateResults: Drug[] = [];
     let dbSkip = 0;
     let dbTake = limit;
 
     if (skip < templateCount) {
-      // Если мы еще на первых страницах и захватываем шаблоны
       templateResults = matchingTemplates.slice(skip, skip + limit);
-      dbTake = limit - templateResults.length; // Остаток добираем из БД
-      dbSkip = 0; // Начинаем БД с самого начала
+      dbTake = limit - templateResults.length; 
+      dbSkip = 0; 
     } else {
-      // Если шаблоны закончились, листаем только БД
       dbSkip = skip - templateCount;
       dbTake = limit;
     }
 
-    // 3. Запрашиваем из БД с пересчитанными limit и offset
     let dbData: Drug[] = [];
     let dbTotal = 0;
-
-    const where: FindOptionsWhere<Drug> = search ? { name: Like(`%${search}%`) } : {};
 
     if (dbTake > 0) {
       [dbData, dbTotal] = await this.drugRepository.findAndCount({
@@ -109,7 +122,6 @@ export class DrugService {
         order: { id: 'DESC' },
       });
     } else {
-      // Если мы берем только из шаблонов, нам все равно нужно знать общее количество записей в БД для расчета totalPages
       dbTotal = await this.drugRepository.count({ where });
     }
 
@@ -128,14 +140,16 @@ export class DrugService {
     return template;
   }
 
-  // ✅ Получение лекарств по массиву ID
-  async findByIds(ids: number[]): Promise<Drug[]> {
+  // ✅ ИЗМЕНЕНО: Добавлен excludeTemplate
+  async findByIds(ids: number[], excludeTemplate: boolean = false): Promise<Drug[]> {
     if (!ids || ids.length === 0) return [];
     const numericIds = ids.map((id) => Number(id));
 
     const dbDrugs = await this.drugRepository.find({
       where: { id: In(numericIds) },
     });
+
+    if (excludeTemplate) return dbDrugs;
 
     const templateDrugs = this.getFormattedTemplates().filter((item) =>
       numericIds.includes(item.id),
@@ -144,11 +158,13 @@ export class DrugService {
     return [...templateDrugs, ...dbDrugs];
   }
 
-  // ✅ Получить одно лекарство по ID (сначала проверяем шаблон, потом БД)
-  async findOne(id: number): Promise<Drug> {
-    const templateItem = this.getFormattedTemplates().find(t => t.id === Number(id));
-    if (templateItem) {
-      return templateItem;
+  // ✅ ИЗМЕНЕНО: Добавлен excludeTemplate
+  async findOne(id: number, excludeTemplate: boolean = false): Promise<Drug> {
+    if (!excludeTemplate) {
+      const templateItem = this.getFormattedTemplates().find(t => t.id === Number(id));
+      if (templateItem) {
+        return templateItem;
+      }
     }
 
     const drug = await this.drugRepository.findOne({ where: { id } });
@@ -158,11 +174,12 @@ export class DrugService {
     return drug;
   }
 
-  // ✅ Поиск по категории (БД + шаблоны)
-  async findByExactCategory(category: DrugCategory): Promise<Drug[]> {
+  // ✅ ИЗМЕНЕНО: Добавлен excludeTemplate
+  async findByExactCategory(category: DrugCategory, excludeTemplate: boolean = false): Promise<Drug[]> {
     const dbDrugs = await this.drugRepository.find({ where: { category } });
     
-    // В шаблонах категория пока строковая, сравниваем как строки
+    if (excludeTemplate) return dbDrugs;
+
     const templateDrugs = this.getFormattedTemplates().filter(
       (t) => (t.category as unknown as string) === category
     );
@@ -170,42 +187,45 @@ export class DrugService {
     return [...templateDrugs, ...dbDrugs];
   }
 
-  // ✅ Поиск по имени с лимитом
-  async searchByName(query: string): Promise<Drug[]> {
-    const templateDrugs = this.getFormattedTemplates().filter((t) =>
-      t.name.toLowerCase().includes(query.toLowerCase()),
-    );
-
+  // ✅ ИЗМЕНЕНО: Добавлен excludeTemplate
+  async searchByName(query: string, excludeTemplate: boolean = false): Promise<Drug[]> {
     const dbDrugs = await this.drugRepository.find({
       where: { name: Like(`%${query}%`) },
       take: 10,
     });
 
-    // Объединяем и обрезаем до нужного лимита
-    return [...templateDrugs, ...dbDrugs].slice(0, 10);
-  }
+    if (excludeTemplate) return dbDrugs;
 
-  // ✅ Поиск по имени без лимита
-  async searchByNameAndGetAll(query: string): Promise<Drug[]> {
     const templateDrugs = this.getFormattedTemplates().filter((t) =>
       t.name.toLowerCase().includes(query.toLowerCase()),
     );
 
+    return [...templateDrugs, ...dbDrugs].slice(0, 10);
+  }
+
+  // ✅ ИЗМЕНЕНО: Добавлен excludeTemplate
+  async searchByNameAndGetAll(query: string, excludeTemplate: boolean = false): Promise<Drug[]> {
     const dbDrugs = await this.drugRepository.find({
       where: { name: Like(`%${query}%`) },
     });
 
+    if (excludeTemplate) return dbDrugs;
+
+    const templateDrugs = this.getFormattedTemplates().filter((t) =>
+      t.name.toLowerCase().includes(query.toLowerCase()),
+    );
+
     return [...templateDrugs, ...dbDrugs];
   }
 
-  // ✅ Обновление информации о лекарстве
   async update(id: number, updateDrugDto: UpdateDrugDto): Promise<Drug> {
     const isTemplate = template.some(t => t.id === Number(id));
     if (isTemplate) {
       throw new BadRequestException('Невозможно обновить данные статического шаблона');
     }
 
-    const drug = await this.findOne(id);
+    // Передаем excludeTemplate = true, чтобы не искать в шаблонах при апдейте (доп защита)
+    const drug = await this.findOne(id, true);
 
     if (updateDrugDto.piece !== undefined || updateDrugDto.costPerPiece !== undefined) {
       const newPiece = updateDrugDto.piece ?? drug.piece;
@@ -217,14 +237,14 @@ export class DrugService {
     return await this.drugRepository.save(updated);
   }
 
-  // ✅ Удаление лекарства по ID
   async remove(id: number): Promise<void> {
     const isTemplate = template.some(t => t.id === Number(id));
     if (isTemplate) {
       throw new BadRequestException('Невозможно удалить статический шаблон');
     }
 
-    const drug = await this.findOne(id);
+    // Передаем excludeTemplate = true
+    const drug = await this.findOne(id, true);
     await this.drugRepository.remove(drug);
   }
 }
