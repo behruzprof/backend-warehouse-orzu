@@ -28,13 +28,12 @@ export class ReportService {
       },
     });
 
-    // ✅ FIX: Filter out any records that have null/missing relations
+    // Filter out any records that have null/missing relations
     const validRequests = requests.filter((req) => req.department && req.drug);
 
     const departmentsMap = new Map<number, string>();
     const drugsMap = new Map<number, string>();
 
-    // ✅ UPDATE: Iterate only over validRequests
     validRequests.forEach((req) => {
       departmentsMap.set(req.department.id, req.department.name);
       drugsMap.set(req.drug.id, req.drug.name);
@@ -45,7 +44,6 @@ export class ReportService {
 
     const usage: Record<string, Record<string, number>> = {};
 
-    // ✅ UPDATE: Iterate only over validRequests here as well
     for (const req of validRequests) {
       const deptId = String(req.department.id);
       const drugId = String(req.drug.id);
@@ -53,7 +51,8 @@ export class ReportService {
       if (!usage[deptId]) usage[deptId] = {};
       if (!usage[deptId][drugId]) usage[deptId][drugId] = 0;
 
-      usage[deptId][drugId] += req.quantity;
+      // ✅ ИСПРАВЛЕНО: Явное преобразование в число, чтобы предотвратить конкатенацию строк
+      usage[deptId][drugId] += Number(req.quantity) || 0;
     }
 
     const workbook = new ExcelJS.Workbook();
@@ -101,7 +100,7 @@ export class ReportService {
       });
     }
 
-    // ✅ Общая строка "Общий расход"
+    // Общая строка "Общий расход"
     const totalRow = ['Общий расход'];
 
     for (const drugId of drugIds) {

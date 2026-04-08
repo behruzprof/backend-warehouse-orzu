@@ -2,8 +2,12 @@ import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
 import { DrugRequest } from 'drug-request/entities/drug-request.entity';
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
-// 🆕 ДОБАВЛЕНО: Строгий список категорий. 
-// Вы можете поменять эти названия на те, которые используются в вашей клинике/аптеке.
+// ✅ ДОБАВЛЕНО: Трансформер для конвертации строк в числа
+const numericTransformer = {
+  to: (value: number) => value,
+  from: (value: string) => parseFloat(value) || 0,
+};
+
 export enum DrugCategory {
   ANTIBIOTICS = 'Таблетки', // Антибиотики
   ANALGESICS = 'Растворы', // Обезболивающие
@@ -20,35 +24,39 @@ export class Drug {
   @Column()
   name: string;
 
-  @Column({ type: 'varchar', default: 'pcs' }) 
+  @Column({ type: 'varchar', default: 'pcs' })
   unit: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  quantity: number; 
+  // ✅ ИСПРАВЛЕНО
+  @Column('decimal', { precision: 10, scale: 2, transformer: numericTransformer })
+  quantity: number;
 
   @Column('int', { default: 0 })
-  minStock: number; 
+  minStock: number;
 
   @Column('int', { default: 0 })
-  maxStock: number; 
+  maxStock: number;
 
   @Column()
-  supplier: string; 
+  supplier: string;
 
   @Column({ default: false })
   IsStandard: boolean;
 
-  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  // ✅ ИСПРАВЛЕНО
+  @Column('decimal', { precision: 12, scale: 2, default: 0, transformer: numericTransformer })
   costPerPiece: number;
 
-  @Column('decimal', { default: 0 })
+  // ✅ ИСПРАВЛЕНО
+  @Column('decimal', { default: 0, transformer: numericTransformer })
   piece: number;
 
-  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  // ✅ ИСПРАВЛЕНО
+  @Column('decimal', { precision: 12, scale: 2, default: 0, transformer: numericTransformer })
   purchaseAmount: number;
 
   @Column({ type: 'date', nullable: false })
-  expiryDate: Date; 
+  expiryDate: Date;
 
   @Column({ nullable: true })
   shelf: string;
@@ -59,7 +67,6 @@ export class Drug {
   @Column('int', { nullable: true })
   row: number;
 
-  // ✅ ИЗМЕНЕНО: Теперь это строгий Enum
   @Column({ type: 'enum', enum: DrugCategory, nullable: true })
   category: DrugCategory;
 
