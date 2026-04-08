@@ -28,10 +28,14 @@ export class ReportService {
       },
     });
 
+    // ✅ FIX: Filter out any records that have null/missing relations
+    const validRequests = requests.filter((req) => req.department && req.drug);
+
     const departmentsMap = new Map<number, string>();
     const drugsMap = new Map<number, string>();
 
-    requests.forEach((req) => {
+    // ✅ UPDATE: Iterate only over validRequests
+    validRequests.forEach((req) => {
       departmentsMap.set(req.department.id, req.department.name);
       drugsMap.set(req.drug.id, req.drug.name);
     });
@@ -40,7 +44,9 @@ export class ReportService {
     const drugIds = Array.from(drugsMap.keys());
 
     const usage: Record<string, Record<string, number>> = {};
-    for (const req of requests) {
+
+    // ✅ UPDATE: Iterate only over validRequests here as well
+    for (const req of validRequests) {
       const deptId = String(req.department.id);
       const drugId = String(req.drug.id);
 
