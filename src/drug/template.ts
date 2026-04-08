@@ -1,6 +1,6 @@
 export const template = [
   {
-    id: '7f7c140d-eac9-42ef-803b-77c7851cdc58',
+    id: 799446,
     name: 'Фиточай ACD 2ф 0.5 эрт 2махал',
     unit: 'pcs',
     quantity: 2,
@@ -21,7 +21,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: 'c292d391-4375-4fd7-b51c-66eef1e0cb27',
+    id: 661691,
     name: 'Живая вода',
     unit: 'ml',
     quantity: 0,
@@ -42,7 +42,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: '0326c200-c007-4385-8c2b-86ed79a5b130',
+    id: 680032,
     name: 'Кислородный пенка',
     unit: 'pcs',
     quantity: 0,
@@ -63,7 +63,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: 'b0e46fde-de6b-4099-aedf-5dd583f7af5e',
+    id: 195576,
     name: 'Бифидум 2 фл х 1махал эрт',
     unit: 'pcs',
     quantity: 2,
@@ -84,7 +84,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: 'c6c5179b-5a06-468f-991b-52aa7007edb3',
+    id: 39184,
     name: 'Кальций Д-3 х 1 махал пешин',
     unit: 'pcs',
     quantity: 1,
@@ -105,7 +105,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: '0df0db6d-dab8-43c8-b70a-886d9186b7c1',
+    id: 336046,
     name: 'Актив уголь 2 та 1 махал 20:00 да',
     unit: 'pcs',
     quantity: 2,
@@ -126,7 +126,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: '5f0ff977-fb75-440a-9c96-477484a9f6d1',
+    id: 93515,
     name: 'S Сода 4%-200,0 мл',
     unit: 'ml',
     quantity: 200,
@@ -147,7 +147,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: '3739605e-b993-4428-9fb9-99dc0413c5b0',
+    id: 314876,
     name: 'S NaCl 0,9%-200,0 мл+ Sol.перикись 2мл',
     unit: 'ml',
     quantity: 202,
@@ -168,7 +168,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: '9076593a-3895-4caa-9246-9e552155e40f',
+    id: 121334,
     name: 'S NaCl 0,9%-200,0 мл',
     unit: 'ml',
     quantity: 200,
@@ -189,7 +189,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: 'bfa6c9e1-5526-4b06-9b03-e01c3a85d00e',
+    id: 292758,
     name: 'Sol. АЗОН в/в',
     unit: 'pcs',
     quantity: 0,
@@ -210,7 +210,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: 'f02cb130-593f-4df9-8e82-d6906303d89b',
+    id: 26499,
     name: 'Sol. БЛОК лазер в/в',
     unit: 'pcs',
     quantity: 0,
@@ -231,7 +231,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: 'b38132a5-67b5-4ccb-b2da-eb927020bc80',
+    id: 399253,
     name: 'Sol. Рибаксин 5ми в/в',
     unit: 'ml',
     quantity: 5,
@@ -252,7 +252,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: '72337211-a895-4c28-a74f-3fc2c83a11f9',
+    id: 359045,
     name: 'Sol. Пирацетам 20%-5ми в/в',
     unit: 'ml',
     quantity: 5,
@@ -273,7 +273,7 @@ export const template = [
     drugRequests: [],
   },
   {
-    id: 'aa144710-2cc6-4c48-8444-5dca132569e7',
+    id: 243907,
     name: 'Дармон мазь елка, бел, оёклар, тизза',
     unit: 'pcs',
     quantity: 0,
@@ -296,81 +296,80 @@ export const template = [
 ];
 
 // 📌 КОНФИГУРАЦИЯ ШАБЛОНОВ (НАБОРОВ)
-// Ключ: Строковый ID (UUID) шаблона
+// Ключ: Числовой ID шаблона из массива `template`
 // Значение: Массив реальных лекарств (id в базе) и их количество (qty), которые нужно списать.
-export const TEMPLATE_COMPONENTS: Record<string, { id: number | string; qty: number }[]> = {
+export const TEMPLATE_COMPONENTS: Record<number, { id: number | string; qty: number }[]> = {
   
   // 1. Фиточай ACD 2ф 0.5 эрт 2махал
-  '7f7c140d-eac9-42ef-803b-77c7851cdc58': [
+  799446: [
     { id: 25, qty: 1 },
     { id: 43, qty: 8 },
   ],
 
   // 2. Живая вода
-  'c292d391-4375-4fd7-b51c-66eef1e0cb27': [
-    // Укажите реальный ID Живой воды в базе и сколько мл/шт списывать
+  661691: [
     // Пример: { id: 10, qty: 1 }
   ],
 
   // 3. Кислородный пенка
-  '0326c200-c007-4385-8c2b-86ed79a5b130': [
+  680032: [
     // Пример: { id: 15, qty: 1 }
   ],
 
   // 4. Бифидум 2 фл х 1махал эрт
-  'b0e46fde-de6b-4099-aedf-5dd583f7af5e': [
+  195576: [
     // Укажите ID реального Бифидума
   ],
 
   // 5. Кальций Д-3 х 1 махал пешин
-  'c6c5179b-5a06-468f-991b-52aa7007edb3': [
+  39184: [
     // Укажите ID реального Кальция Д-3
   ],
 
   // 6. Актив уголь 2 та 1 махал 20:00 да
-  '0df0db6d-dab8-43c8-b70a-886d9186b7c1': [
+  336046: [
     // Укажите ID реального Активированного угля
   ],
 
   // 7. S Сода 4%-200,0 мл
-  '5f0ff977-fb75-440a-9c96-477484a9f6d1': [
+  93515: [
     // Укажите ID реальной Соды
   ],
 
-  // 8. S NaCl 0,9%-200,0 мл+ Sol.перикись 2мл (Здесь будет 2 компонента!)
-  '3739605e-b993-4428-9fb9-99dc0413c5b0': [
+  // 8. S NaCl 0,9%-200,0 мл+ Sol.перикись 2мл
+  314876: [
     // Пример (укажите реальные ID): 
     // { id: 101, qty: 1 }, // NaCl 0.9%
     // { id: 102, qty: 2 }  // Перекись водорода
   ],
 
   // 9. S NaCl 0,9%-200,0 мл
-  '9076593a-3895-4caa-9246-9e552155e40f': [
+  121334: [
     // Укажите ID реального NaCl
   ],
 
   // 10. Sol. АЗОН в/в
-  'bfa6c9e1-5526-4b06-9b03-e01c3a85d00e': [
+  292758: [
     // Укажите ID реального АЗОН
   ],
 
   // 11. Sol. БЛОК лазер в/в
-  'f02cb130-593f-4df9-8e82-d6906303d89b': [
+  26499: [
     // Укажите ID реального БЛОК лазер
   ],
 
   // 12. Sol. Рибаксин 5ми в/в
-  'b38132a5-67b5-4ccb-b2da-eb927020bc80': [
+  399253: [
     // Укажите ID реального Рибаксина
   ],
 
   // 13. Sol. Пирацетам 20%-5ми в/в
-  '72337211-a895-4c28-a74f-3fc2c83a11f9': [
+  359045: [
     // Укажите ID реального Пирацетама
   ],
 
   // 14. Дармон мазь елка, бел, оёклар, тизза
-  'aa144710-2cc6-4c48-8444-5dca132569e7': [
+  243907: [
     // Укажите ID реальной Дармон мази
-  ],
+  ]
 };

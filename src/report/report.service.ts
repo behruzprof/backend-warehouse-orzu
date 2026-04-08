@@ -28,6 +28,8 @@ export class ReportService {
       },
     });
 
+    console.log(requests)
+
     // Filter out any records that have null/missing relations
     const validRequests = requests.filter((req) => req.department && req.drug);
 
