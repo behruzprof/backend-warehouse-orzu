@@ -15,9 +15,7 @@ import {
 } from '@nestjs/common';
 import { DrugService } from './drug.service';
 import { CreateDrugDto } from './dto/create-drug.dto';
-import {
-  UpdateDrugDto,
-} from './dto/update-drug.dto';
+import { UpdateDrugDto } from './dto/update-drug.dto';
 // import { ApiKeyGuard } from 'auth/api-key.guard';
 import { DrugCategory } from './entities/drug.entity'; // 🆕 ДОБАВЛЕНО: Импорт Enum
 
@@ -83,11 +81,9 @@ export class DrugController {
    * GET /drugs/by-ids?ids=1,2,3
    */
   @Get('by-ids')
-  findByIds(
-    @Query('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
-    ids: number[],
-  ) {
-    return this.drugService.findByIds(ids);
+  async getByIds(@Query('ids') ids: string) {
+    const idArray = ids.split(',').map(Number);
+    return this.drugService.findByIds(idArray);
   }
 
   /**
