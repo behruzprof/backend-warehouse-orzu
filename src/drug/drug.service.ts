@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository, In, FindOptionsWhere } from 'typeorm';
-import { Drug, DrugCategory } from './entities/drug.entity'; // 🆕 ДОБАВЛЕН ИМПОРТ DrugCategory
+import { Drug, DrugCategory } from './entities/drug.entity';
 import { CreateDrugDto } from './dto/create-drug.dto';
 import { UpdateDrugDto } from './dto/update-drug.dto';
 import { DrugArrival } from 'drug-arrival/entities/drug-arrival.entity';
@@ -19,38 +19,47 @@ export class DrugService {
   // ✅ Создание нового лекарства
   async create(createDrugDto: CreateDrugDto): Promise<Drug> {
     const {
-      name, quantity, minStock, maxStock, supplier,
-      expiryDate, arrivalDate, paymentType, 
-      IsStandard, costPerPiece, piece, ...optionalFields
+      name,
+      quantity,
+      minStock,
+      maxStock,
+      supplier,
+      expiryDate,
+      arrivalDate,
+      paymentType,
+      IsStandard,
+      costPerPiece,
+      piece,
+      ...optionalFields
     } = createDrugDto;
 
     // 🧮 АВТОВЫЧИСЛЕНИЕ: сумма = штук * цена за штуку
     const calculatedPurchaseAmount = piece * costPerPiece;
 
     const drug = this.drugRepository.create({
-      name, 
-      quantity, 
-      minStock, 
-      maxStock, 
-      supplier, 
-      purchaseAmount: calculatedPurchaseAmount, 
-      IsStandard: IsStandard ?? false,          
+      name,
+      quantity,
+      minStock,
+      maxStock,
+      supplier,
+      purchaseAmount: calculatedPurchaseAmount,
+      IsStandard: IsStandard ?? false,
       costPerPiece,
       piece,
       expiryDate: new Date(expiryDate),
       arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
       ...optionalFields,
     });
-    
+
     const savedDrug = await this.drugRepository.save(drug);
 
     const drugArrival = this.drugArrivalRepository.create({
       drug: savedDrug,
       arrivalDate: arrivalDate ? new Date(arrivalDate) : new Date(),
-      expiryDate: new Date(expiryDate), 
-      quantity, 
-      purchaseAmount: calculatedPurchaseAmount, 
-      supplier, 
+      expiryDate: new Date(expiryDate),
+      quantity,
+      purchaseAmount: calculatedPurchaseAmount,
+      supplier,
       paymentType,
     });
     await this.drugArrivalRepository.save(drugArrival);
@@ -58,12 +67,11 @@ export class DrugService {
     return savedDrug;
   }
 
-  // ⏪ СТАРЫЙ МЕТОД: Получить все лекарства (без пагинации)
   async findAll(): Promise<Drug[]> {
-    return await this.drugRepository.find();
+    const dbDrugs = await this.drugRepository.find();
+    return [...dbDrugs, ...(template as unknown as Drug[])];
   }
 
-  // 🆕 НОВЫЙ МЕТОД: Получить все лекарства (с пагинацией и опциональным поиском)
   async findAllPaginated(page: number, limit: number, search?: string) {
     const skip = (page - 1) * limit;
 
@@ -75,7 +83,7 @@ export class DrugService {
       where,
       skip,
       take: limit,
-      order: { id: 'DESC' }, 
+      order: { id: 'DESC' },
     });
 
     return {
@@ -91,15 +99,34 @@ export class DrugService {
     return template;
   }
 
-  // 🆕 НОВЫЙ МЕТОД: Получение лекарств по массиву ID
+  // 🆕 ОБНОВЛЕННЫЙ МЕТОД: Получение лекарств по массиву ID (включая шаблоны)
   async findByIds(ids: number[]): Promise<Drug[]> {
     if (!ids || ids.length === 0) return [];
-    
-    return this.drugRepository.find({
+
+    // Приводим все ID к числам, если они пришли из query-параметров как строки
+    const numericIds = ids.map((id) => Number(id));
+
+    // 1. Ищем в базе данных через TypeORM
+    const dbDrugs = await this.drugRepository.find({
       where: {
-        id: In(ids),
+        id: In(numericIds),
       },
     });
+
+    // 2. Ищем в статическом шаблоне (template)
+    // Фильтруем те элементы, чьи ID есть в списке запроса
+    const templateDrugs = template
+      .filter((item) => numericIds.includes(item.id))
+      .map((item) => ({
+        ...item,
+        // Обязательно конвертируем строки в Date, иначе TypeScript будет ругаться,
+        // а логика приложения может сломаться при работе с датами
+        expiryDate: new Date(item.expiryDate),
+        arrivalDate: new Date(item.arrivalDate),
+      })) as unknown as Drug[];
+
+    // 3. Возвращаем объединенный массив
+    return [...dbDrugs, ...templateDrugs];
   }
 
   // ✅ Получить одно лекарство по ID
@@ -121,9 +148,12 @@ export class DrugService {
   // ✅ Обновление информации о лекарстве
   async update(id: number, updateDrugDto: UpdateDrugDto): Promise<Drug> {
     const drug = await this.findOne(id);
-    
+
     // Если при апдейте передают piece и costPerPiece, мы тоже должны пересчитать сумму
-    if (updateDrugDto.piece !== undefined || updateDrugDto.costPerPiece !== undefined) {
+    if (
+      updateDrugDto.piece !== undefined ||
+      updateDrugDto.costPerPiece !== undefined
+    ) {
       const newPiece = updateDrugDto.piece ?? drug.piece;
       const newCost = updateDrugDto.costPerPiece ?? drug.costPerPiece;
       drug.purchaseAmount = newPiece * newCost;
