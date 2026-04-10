@@ -64,7 +64,7 @@ export class TelegramService {
   // отправка документа
   async sendFile(filePath: string, fileName = 'file.xlsx'): Promise<void> {
     const form = new FormData();
-    form.append('chat_id', this.CHAT_ID1_BEHRUZ);
+    form.append('chat_id', this.CHAT_ID1_GULNOZA);
     form.append('document', fs.createReadStream(filePath), fileName);
 
     try {
