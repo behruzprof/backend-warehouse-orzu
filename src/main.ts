@@ -1,21 +1,24 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from 'app.module';
+import { AppModule } from './app.module'; // проверьте путь
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Явно указываем, что используем Express под капотом
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Включаем CORS
- app.enableCors({
-  origin: [
-    'https://pas.orzumedical.uz',
-    'https://frontend-warehouse-orzumed.vercel.app',
-    'http://localhost:5173',
-  ],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'], 
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true,
-});
+  // 1. ОЧЕНЬ ВАЖНО ДЛЯ RAILWAY: доверяем прокси-серверу
+  app.set('trust proxy', 1);
+
+  // 2. Агрессивная настройка CORS
+  app.enableCors({
+    // origin: true заставляет сервер брать origin из запроса и отвечать им же.
+    // Это обходит проблемы со слэшами на конце URL или неточным совпадением
+    origin: true, 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
+    credentials: true,
+  });
 
   const PORT = process.env.PORT || 3001;
 
