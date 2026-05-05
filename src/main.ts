@@ -14,10 +14,11 @@ async function bootstrap() {
   app.enableCors({
     // origin: true заставляет сервер брать origin из запроса и отвечать им же.
     // Это обходит проблемы со слэшами на конце URL или неточным совпадением
-    origin: true, 
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
-    credentials: true,
+    // origin: true, 
+    // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    // allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
+    // credentials: true,
+    origin: '*', // Разрешаем все источники (можно сузить позже)
   });
 
   const PORT = process.env.PORT || 3001;
