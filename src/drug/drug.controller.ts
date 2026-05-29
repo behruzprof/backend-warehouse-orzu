@@ -28,7 +28,6 @@ export class DrugController {
 
   @Get()
   findAll(
-    // 🆕 ДОБАВЛЕНО: фильтр для исключения шаблонов
     @Query('excludeTemplate', new DefaultValuePipe(false), ParseBoolPipe) excludeTemplate: boolean,
   ) {
     return this.drugService.findAll(excludeTemplate);
