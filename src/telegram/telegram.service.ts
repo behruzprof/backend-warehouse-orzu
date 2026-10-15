@@ -15,6 +15,8 @@ export class TelegramService {
   private readonly CHAT_ID1_SHAXBOZ = '732458676';
   private readonly CHAT_ID1_BEHRUZ = '6049496733';
   private readonly CHAT_ID1_IRODA = '7164165961';
+  private readonly CHAT_ID1_ORZUGUL = '517445620';
+  
 
   // универсальная задержка (анти-бан)
   private sleep(ms: number) {
