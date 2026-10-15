@@ -8,7 +8,7 @@ import * as FormData from 'form-data';
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
 
-  private readonly TOKEN = '8136238330:AAEtyUK32ANsZzICWdYDZA2qBoqYJa9InM0';
+  private readonly TOKEN = "8865160861:AAG9odl2js4wK22pMKZY14FRdo0NlcttdFw";
 
   private readonly CHAT_ID1_GULNOZA = '542403905';
   private readonly CHAT_ID1_DILNOZA = '1119825333';
