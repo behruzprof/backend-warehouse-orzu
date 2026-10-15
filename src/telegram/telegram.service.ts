@@ -53,6 +53,7 @@ export class TelegramService {
         this.CHAT_ID1_SHAXBOZ,
         this.CHAT_ID1_BEHRUZ,
         this.CHAT_ID1_IRODA,
+        this.CHAT_ID1_ORZUGUL,
       );
     }
 
